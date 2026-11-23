@@ -2,7 +2,7 @@
 
 const speakers = {
   soul: {name:'Laiturin kaiku', channel:'ASEMAN KUULUTUS', color:'#90e4d9'},
-  kajo: {name:'Kajo', channel:'VASTARINTA · 09', color:'#f4ba70'},
+  kajo: {name:'Karo', channel:'VASTARINTA · 09', color:'#f4ba70'},
   saro: {name:'Särö', channel:'VASTARINTA · 09', color:'#bedb94'},
   combine: {name:'Combine', channel:'SIEPATTU LÄHETYS', color:'#ff9879'},
   gman: {name:'G-Man', channel:'TUNTEMATON TAAJUUS', color:'#adc4ed'}
@@ -12,12 +12,12 @@ const dialogue = {
   arrival: ['soul','Kuuletko kuulutuksen? Minä lähetin sen kaksikymmentä vuotta sitten. Kukaan muu ei enää vastaa.'],
   station: ['soul','Kun seitsemän tunnin sota päättyi, Combine vei asemalta kellot. Kaksi kennoa pitää vielä viimeistä junaa paikallaan.'],
   firstCell: ['soul','Kuuletko kiskot? Nyt muistan. Olin junanlähettäjä. Vaunuissa oli ihmisiä, kun mies salkkuineen astui laiturille.'],
-  secondCell: ['soul','Ratapihan radio heräsi. Kajo ja Särö jäivät sinne odottamaan junaa. Etsi heidät portin takaa.'],
+  secondCell: ['soul','Ratapihan radio heräsi. Karo ja Särö jäivät sinne odottamaan junaa. Etsi heidät portin takaa.'],
   greeting: ['kajo','Hei, tänne! Kuulitko sinäkin sen kuulutuksen? Meidän radio toisti tähän asti vain samaa sekuntia.'],
-  weapon: ['saro','Ota tämä pulssikivääri. Kajo ja minä avaamme vaihteen. Pidä partio loitolla, kunnes valo vaihtuu.'],
+  weapon: ['saro','Ota tämä pulssikivääri. Karo ja minä annamme suojatulta. Puvun virtakenno syöttää siihen pulsseja niin kauan kuin pidät liipaisinta pohjassa.'],
   incoming: ['combine','Valvontakeskus yksiköille. Ratapihalla on luvaton lähetys. Katkaiskaa yhteys.'],
-  drones: ['kajo','Kuuntele tuota sirinää. Manhackit tulevat nyt molempia raiteita pitkin!'],
-  lastWave: ['saro','Sain vaihteen liikkeelle! Vielä yksi partio. Näen jo junan valot.'],
+  heavy: ['kajo','Neljä sotilasta ja yksi jätti. Kun se nostaa jalkansa, mene betonivallin taakse!'],
+  lastWave: ['saro','Kaksi jättiä ja kymmenen sotilasta! Vaihde liikkuu jo. Pidetään rata auki vielä hetki.'],
   clear: ['kajo','Vihreä valo! Me pidämme tämän pään auki. Vie kuulutus terminaalin toiselle puolelle.'],
   gate: ['soul','Laskin aina vaunut, kun juna lähti. Tänään pääsen viimein viimeiseen asti.'],
   boss: ['gman','Junan piti jäädä asemalle, herra Freeman. Kuka antoi teille luvan vaihtaa raidetta?'],
