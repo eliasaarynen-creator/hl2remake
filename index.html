@@ -2,8 +2,8 @@
 <html lang="fi">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#101416"><title>Half-Life 2 · Lambda Terminal</title>
-<meta name="description" content="Pelaa City 17:n fanitehtävää selaimessa tai käynnistä alkuperäinen Half-Life 2.">
+<meta name="theme-color" content="#101416"><title>Half-Life 2 · Aikakatkos</title>
+<meta name="description" content="Pelaa Aikakatkos-fanikampanjaa. Avaa portti City 17:ssä ja kohtaa G-Man kolmivaiheisessa pomotaistelussa.">
 <link rel="icon" href="assets/lambda.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css">
 <link rel="preload" as="image" href="assets/city17.webp">
 </head>
@@ -20,31 +20,34 @@
 <symbol id="pin" viewBox="0 0 24 24"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2.2"/></symbol>
 <symbol id="enter" viewBox="0 0 24 24"><path d="M20 5v7a2 2 0 0 1-2 2H4m5-5-5 5 5 5"/></symbol>
 <symbol id="close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+<symbol id="target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/><path d="M12 2v6m0 8v6M2 12h6m8 0h6"/></symbol>
 <symbol id="pause" viewBox="0 0 24 24"><path d="M8 5v14m8-14v14" stroke-width="3"/></symbol>
 </defs></svg>
 <main id="home">
 <div class="backdrop"></div><div class="shade"></div><div class="film"></div>
 <header class="top"><div class="brand"><svg><use href="#lambda"/></svg><b>LAMBDA</b><span class="brand-divider"></span><span class="brand-sub">TERMINAALI</span></div>
 <div class="tools"><button class="soundtool" id="soundBtn" aria-pressed="false"><svg class="icon"><use id="soundIcon" href="#mute"/></svg><span id="soundName">Äänet pois</span></button><button class="fulltool" id="fullBtn" aria-label="Koko näyttö" title="Koko näyttö"><svg class="icon"><use id="fullIcon" href="#full"/></svg></button></div></header>
-<section class="hero" aria-label="Päävalikko"><div class="menu"><div class="eyebrow"><i></i>PÄÄVALIKKO</div>
+<section class="hero" aria-label="Päävalikko"><div class="menu"><div class="eyebrow"><i></i>CITY 17 <span class="slash">//</span> FANIKAMPANJA</div>
 <h1 aria-label="Half-Life 2"><span aria-hidden="true" class="wordmark">H<span class="brandA">Λ</span>LF-LIFE</span><sup aria-hidden="true">2</sup></h1>
-<p class="intro">Tervetuloa City 17:ään.</p>
+<h2 class="campaignTitle">Aikakatkos</h2><p class="intro">Käynnistä aseman rele. Avaa portti.<br>G-Man odottaa toisella puolella.</p>
 <nav aria-label="Pelivalikko">
-<button class="start navitem" id="playBtn"><svg class="icon"><use href="#play"/></svg><span>Aloita peli</span><span class="enter-tag">ENTER <svg><use href="#enter"/></svg></span></button>
+<button class="start navitem" id="playBtn"><svg class="icon"><use href="#play"/></svg><span id="playText">Aloita kampanja</span><span class="enter-tag">ENTER <svg><use href="#enter"/></svg></span></button>
 <button class="subitem navitem" id="controlsBtn"><svg class="icon"><use href="#keys"/></svg>Ohjaimet</button>
 <button class="subitem navitem" id="settingsBtn"><svg class="icon"><use href="#gear"/></svg>Asetukset</button>
-</nav></div>
-<aside class="location" aria-label="Sijainti"><span class="location-mark"><svg class="icon"><use href="#pin"/></svg></span><div><span class="micro">SIJAINTI</span><strong>City 17</strong></div><div class="barcode" aria-hidden="true"></div></aside></section>
+<button class="original-link navitem" id="originalBtn">Alkuperäinen Half-Life 2</button></nav></div>
+<aside class="casefile" aria-label="Pomotaistelun harjoittelu"><div class="file-intro"><span class="micro">VASTUSTAJAN TIEDOT</span><span class="record-mark" aria-hidden="true"></span></div><div class="file-body"><div class="file-photo" aria-hidden="true"><img src="assets/gman.svg" alt=""></div><div class="file-copy"><span class="micro">TERMINAALI 00</span><strong>G-Man</strong><span>Kolmivaiheinen loppupomo</span></div></div><button id="practiceBtn"><svg class="icon"><use href="#target"/></svg>Harjoittele taistelua</button></aside></section>
 <footer><div class="hints"><span><kbd>↑</kbd><kbd>↓</kbd> Navigoi</span><span><kbd>↵</kbd> Valitse</span></div><span class="edition"><i></i> EPÄVIRALLINEN FANIPROJEKTI</span></footer>
 </main>
 <section id="arena" hidden aria-label="City 17:n fanitehtävä">
 <canvas id="world" tabindex="0" aria-label="Pelikenttä. Liiku WASD-näppäimillä ja käänny nuolilla."></canvas>
-<div class="game-header"><div class="objective"><b>ASEMA-AUKIO</b><span id="mission"></span></div><button id="pauseBtn" class="iconButton" aria-label="Tauko"><svg class="icon"><use href="#pause"/></svg></button></div>
-<div id="crosshair"></div><div id="notice" role="status"></div><div class="hud"><span class="hudLabel">PAINOVOIMA-ASE</span><b id="weaponState">VALMIS</b></div>
+<div class="game-header"><div class="objective"><b id="sectionName">ASEMA-AUKIO</b><span id="mission"></span></div><button id="pauseBtn" class="iconButton" aria-label="Tauko"><svg class="icon"><use href="#pause"/></svg></button></div>
+<div id="bossHud" hidden><div><b>G-MAN</b><span id="bossStage"></span></div><progress id="bossBar" value="6" max="6" aria-label="G-Manin jäljellä oleva voima"></progress></div>
+<div id="bearing"></div><div id="phaseSplash" hidden></div><div id="hazardWarning" role="status" hidden>AIKAREPEÄMÄ · VÄISTÄ</div><div id="crosshair"></div><div id="notice" role="status"></div><div class="hud"><span class="hudLabel">PAINOVOIMA-ASE</span><b id="weaponState">VALMIS</b><span class="dash-line">SYÖKSY <span id="dashState">VALMIS</span></span></div>
+<div id="vitals" hidden><div><span>HEV · KUNTO</span><b id="health">100 %</b></div><progress id="healthBar" max="100" value="100" aria-label="Pelaajan kunto"></progress></div>
 <div id="interaction"></div>
-<div class="touch-set"><div id="pad" aria-label="Liikkumisohjain"><div id="stick"></div></div><button id="actBtn" aria-label="Käytä painovoima-asetta">λ</button></div>
+<div class="touch-set"><div id="pad" aria-label="Liikkumisohjain"><div id="stick"></div></div><button id="dashBtn" aria-label="Syöksy">Syöksy</button><button id="actBtn" aria-label="Käytä painovoima-asetta">λ</button></div>
 </section>
 <dialog id="panel" aria-labelledby="panelTitle"><div class="dialog-top"><span class="dialog-brand"><svg><use href="#lambda"/></svg> LAMBDA TERMINAALI</span><button id="closePanel" aria-label="Sulje"><svg class="icon"><use href="#close"/></svg></button></div><div id="panelContent"></div></dialog>
 <div id="toast" role="status"></div>
-<script src="game.js" defer></script><script src="app.js" defer></script>
+<script src="encounter.js" defer></script><script src="art.js" defer></script><script src="game.js" defer></script><script src="app.js" defer></script>
 </body></html>
