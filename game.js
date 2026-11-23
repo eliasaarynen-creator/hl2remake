@@ -28,10 +28,10 @@ class CityGame {
     this.held=-1;this.beam=0;this.bob=0;this.messageEnd=0;this.cameraPitch=0;
     this.pixelBudget=310000;this.frameSample=0;this.sampleFrames=0;
     this.reset();
-    gameArt(this);
+    gameArt(this);railArt(this);
   }
   reset() {
-    this.map=this.streetMap;this.encounter=null;this.dashTime=0;this.dashCooldown=0;
+    this.map=this.streetMap;this.encounter=null;this.yard=null;this.storyStarted=false;this.ui.radio.clear();this.dashTime=0;this.dashCooldown=0;
     this.dashX=0;this.dashY=0;this.walkForward=0;this.walkSide=0;this.footstep=0;
     this.x=3.3;this.y=8.5;this.angle=-.08;this.cameraPitch=0;this.held=-1;this.done=0;this.elapsed=0;
     this.cells=[{x:6.6,y:8.1,type:'cell',inPlace:false},{x:16.8,y:10.3,type:'cell',inPlace:false}];
@@ -39,10 +39,24 @@ class CityGame {
   }
   value(x,y){return Number(this.map[Math.floor(y)]?.[Math.floor(x)]??1)}
   clear(x,y,r=.19){return !this.value(x-r,y-r)&&!this.value(x+r,y-r)&&!this.value(x-r,y+r)&&!this.value(x+r,y+r)}
+  get spirit(){
+    const pos=[{x:6.62,y:7.65},{x:11.7,y:7.15},{x:16.8,y:4.5}][this.done];
+    return {...pos,type:'soul',height:1.88,aspect:.427,z:.06+.055*Math.sin(this.elapsed*2.6),alpha:.92};
+  }
+  get nearSpirit(){return this.distance(this.spirit)<3.8&&this.visible(this.spirit)&&Math.cos(Math.atan2(this.spirit.y-this.y,this.spirit.x-this.x)-this.angle)>.82}
+  openYard(checkpoint={}){
+    this.ui.notice.textContent='';this.encounter=null;this.yard=new RailYard(this,checkpoint);
+    this.beam=0;this.dashTime=0;this.dashCooldown=0;this.ui.radio.clear();
+    if(this.yard.clear)this.ui.radio.say('clear','gate');
+    else if(!this.yard.armed)this.ui.radio.say('greeting');
+    this.updateUI();this.ui.save();
+  }
   openTerminal(checkpoint=0){
+    this.yard=null;this.ui.radio.clear();
+    this.ui.radio.say(checkpoint===4?'decoy':checkpoint===2?'fracture':'boss');
     this.encounter=new GManEncounter(this,checkpoint);this.dashTime=0;this.dashCooldown=0;
     this.beam=0;this.ui.tone(95);this.updateUI();
-    this.tell('G-Man: ”Teille on vielä yksi tehtävä.”');this.ui.save();
+    this.tell('Sieppaa sininen pallo painovoima-aseella.');this.ui.save();
   }
   dash(){
     if(!this.running||this.dashCooldown>0||this.encounter?.result)return;
@@ -54,8 +68,12 @@ class CityGame {
   }
   serialize(){
     if(this.encounter)return {stage:'terminal',checkpoint:this.encounter.checkpoint,elapsed:this.elapsed};
+    if(this.yard)return this.yard.checkpoint();
     return {stage:'station',x:this.x,y:this.y,angle:this.angle,held:this.held,cells:this.cells,elapsed:this.elapsed}}
   restore(s) {
+    if(s?.stage==='yard'&&typeof s.armed==='boolean'&&Number.isInteger(s.wave)&&s.wave>=0&&s.wave<=3&&(s.armed||s.wave===0)&&Number.isFinite(s.elapsed)&&s.elapsed>=0){
+      this.reset();this.elapsed=s.elapsed;this.openYard(s);return true;
+    }
     if(s?.stage==='terminal'&&[0,2,4].includes(s.checkpoint)&&Number.isFinite(s.elapsed)&&s.elapsed>=0){
       this.reset();this.elapsed=s.elapsed;this.openTerminal(s.checkpoint);return true;
     }
@@ -127,9 +145,14 @@ class CityGame {
     }return c;
   }
   start(){
-    this.running=true;this.frameSample=0;this.sampleFrames=0;this.keys.clear();this.joy={x:0,y:0};this.last=performance.now();this.frameId=requestAnimationFrame(t=>this.frame(t));this.updateUI();
+    this.running=true;this.ui.radio.resume();
+    if(!this.encounter&&!this.yard&&!this.storyStarted){
+      this.storyStarted=true;
+      if(!this.done)this.ui.radio.say('arrival','station');else this.ui.radio.say(this.done===1?'firstCell':'secondCell');
+    }
+    this.frameSample=0;this.sampleFrames=0;this.keys.clear();this.joy={x:0,y:0};this.last=performance.now();this.frameId=requestAnimationFrame(t=>this.frame(t));this.updateUI();
   }
-  stop(){this.running=false;cancelAnimationFrame(this.frameId);this.keys.clear();this.joy={x:0,y:0}}
+  stop(){this.running=false;this.ui.radio.pause();if(this.yard)this.yard.trigger=false;cancelAnimationFrame(this.frameId);this.keys.clear();this.joy={x:0,y:0}}
   tell(msg){this.ui.notice.textContent=msg;this.messageEnd=performance.now()+2800}
   distance(o){return Math.hypot(o.x-this.x,o.y-this.y)}
   visible(o){
@@ -137,29 +160,39 @@ class CityGame {
     for(let i=1;i<n;i++)if(this.value(this.x+dx*i/n,this.y+dy*i/n))return false;return true;
   }
   nearbyCell(){return this.cells.findIndex(c=>!c.inPlace&&this.distance(c)<3.4&&Math.cos(Math.atan2(c.y-this.y,c.x-this.x)-this.angle)>.88&&this.visible(c))}
-  action(){
+  action(fire=false){
     if(!this.running)return;
     if(this.encounter){this.encounter.input();return}
-    if(this.done===2&&this.distance(this.exit)<1.8){this.openTerminal();return}
+    if(this.yard){this.yard.use(fire);return}
+    if(this.done===2&&this.distance(this.exit)<1.8){this.openYard();return}
     if(this.held>=0){
       const c=this.cells[this.held];
-      if(this.distance(this.station)<2.4&&this.visible(this.station)){c.inPlace=true;c.x=this.station.x;c.y=this.station.y;this.held=-1;this.done++;this.ui.tone(330);this.tell(this.done===2?'Portti avattu. Seuraa vihreää merkkiä.':'Releessä on virtaa. Etsi toinen kenno.')}
+      if(this.distance(this.station)<2.4&&this.visible(this.station)){c.inPlace=true;c.x=this.station.x;c.y=this.station.y;this.held=-1;this.done++;this.ui.radio.say(this.done===1?'firstCell':'secondCell');this.ui.tone(330);this.tell(this.done===2?'Portti avattu. Seuraa vihreää merkkiä.':'Releessä on virtaa. Etsi toinen kenno.')}
       else{let dx=Math.cos(this.angle),dy=Math.sin(this.angle),range=.3;while(range<3.6&&this.clear(this.x+dx*(range+.15),this.y+dy*(range+.15),.22))range+=.15;c.x=this.x+dx*(range-.15);c.y=this.y+dy*(range-.15);this.held=-1;this.ui.tone(120);this.tell('Kenno vapautettu.')}
-    } else {let i=this.nearbyCell();if(i<0){this.tell(this.done===2?'Kulje vihreälle uloskäynnille.':'Tähtää läheiseen oranssiin kennoon.');return}this.held=i;this.ui.tone(205);this.tell('Kenno kiinni. Vie se siniselle releelle.')}
+    } else {let i=this.nearbyCell();if(i<0){if(this.nearSpirit){if(!this.ui.radio.current)this.ui.radio.say(['station','firstCell','secondCell'][this.done]);return}this.tell(this.done===2?'Kulje vihreälle uloskäynnille.':'Tähtää läheiseen oranssiin kennoon.');return}this.held=i;this.ui.tone(205);this.tell('Kenno kiinni. Vie se siniselle releelle.')}
     this.beam=1;this.updateUI();this.ui.save();
   }
   updateUI(){
     const e=this.encounter;
-    this.ui.section.textContent=e?'TERMINAALI 00':'ASEMA-AUKIO';
-    this.ui.bossHud.hidden=!e;this.ui.vitals.hidden=!e;this.ui.arena.classList.toggle('terminal',!!e);
+    this.ui.section.textContent=e?'TERMINAALI 00':this.yard?'RATAPIHA 09':'ASEMA-AUKIO';
+    this.ui.arena.classList.toggle('yard',!!this.yard);
+    this.ui.kind.textContent=this.yard?.armed?'PULSSIKIVÄÄRI':'PAINOVOIMA-ASE';
+    this.ui.act.textContent=this.yard?.armed&&!this.yard.clear?'◎':'λ';
+    this.ui.act.setAttribute('aria-label',this.yard?.armed&&!this.yard.clear?'Ammu pulssikiväärillä':'Käytä tai keskustele');
+    this.ui.bossHud.hidden=!e;this.ui.vitals.hidden=!e&&!this.yard?.armed;this.ui.arena.classList.toggle('terminal',!!e);
     if(e){
       this.ui.mission.textContent='Sieppaa sininen pallo ja palauta se G-Maniin.';
       this.ui.weapon.textContent=e.holding?'PALLO LADATTU':'SIEPPAAJA';
       this.ui.health.textContent=e.health+' %';this.ui.healthBar.value=e.health;
       this.ui.bossBar.value=6-e.hits;
       this.ui.bossStage.textContent='VAIHE '+(e.phase+1)+'/3 · '+phaseTitles[e.phase].toLocaleUpperCase('fi');
+    }else if(this.yard){
+      const y=this.yard;
+      this.ui.mission.textContent=y.objective;
+      this.ui.weapon.textContent=y.armed?(y.reloadTime>0?'LATAUTUU':String(y.ammo).padStart(2,'0')+' / 12'):'VALMIS';
+      this.ui.health.textContent=y.health+' %';this.ui.healthBar.value=y.health;
     }else{
-      this.ui.mission.textContent=this.done===2?'Avaa portti terminaaliin.':'Vie energiakennot siniselle releelle · '+this.done+'/2';
+      this.ui.mission.textContent=this.done===2?'Avaa portti ratapihalle.':'Vie energiakennot siniselle releelle · '+this.done+'/2';
       this.ui.weapon.textContent=this.held<0?'VALMIS':'KENNO KIINNI';
     }
   }
@@ -189,21 +222,23 @@ class CityGame {
     }
     this.bob+=Math.min(1,Math.hypot(f,s))*dt*8;this.beam=Math.max(0,this.beam-dt*2.5);
     if(time>this.messageEnd&&this.ui.notice.textContent)this.ui.notice.textContent='';
-    if(this.encounter)this.encounter.update(dt);
+    this.ui.radio.update(Math.min(.5,interval));
+    if(this.encounter)this.encounter.update(dt);else if(this.yard)this.yard.update(dt);
     if(!this.running)return;
     this.footstep-=dt;
     if(Math.hypot(f,s)>.3&&this.footstep<=0){this.ui.footstep?.();this.footstep=speed/dt>3?.29:.45}
     this.render(time);
     const dashLabel=this.dashCooldown>0?this.dashCooldown.toFixed(1)+' s':'VALMIS';
     if(this.ui.dash.textContent!==dashLabel)this.ui.dash.textContent=dashLabel;
-    this.ui.aim.classList.toggle('locked',this.encounter?!!(this.encounter.catchable()||this.encounter.holding&&this.encounter.alignment(this.encounter.target)>.971):this.nearbyCell()>=0);
-    this.ui.arena.classList.toggle('hurt',!!this.encounter&&this.encounter.impact>0);
+    this.ui.aim.classList.toggle('locked',this.encounter?!!(this.encounter.catchable()||this.encounter.holding&&this.encounter.alignment(this.encounter.target)>.971):this.yard?!!this.yard.target():this.nearbyCell()>=0);
+    this.ui.aim.classList.toggle('hit',!!this.yard?.hit);
+    this.ui.arena.classList.toggle('hurt',(this.encounter?.impact||this.yard?.impact||0)>0);
     const trap=this.encounter?.traps.find(t=>!t.fired&&distanceBetween(t,this)<t.radius);
     this.ui.warning.hidden=!trap;
     this.ui.phaseSplash.hidden=!this.encounter||this.encounter.phaseIntro<=0;
     if(!this.ui.phaseSplash.hidden){const title=phaseTitles[this.encounter.phase];if(this.ui.phaseSplash.textContent!==title)this.ui.phaseSplash.textContent=title}
     let keyName=matchMedia('(pointer:coarse)').matches?'λ':'E';
-    const hint=this.encounter?this.encounter.hint():this.done===2&&this.distance(this.exit)<1.8?'Siirry terminaaliin':this.held>=0&&this.distance(this.station)<2.4?'Kytke kenno':this.held<0&&this.nearbyCell()>=0?'Tartu kennoon':'';
+    const hint=this.encounter?this.encounter.hint():this.yard?this.yard.hint:this.done===2&&this.distance(this.exit)<1.8?'Siirry ratapihalle':this.held>=0&&this.distance(this.station)<2.4?'Kytke kenno':this.held<0&&this.nearbyCell()>=0?'Tartu kennoon' :this.held<0&&this.nearSpirit?'Kuuntele kaikua':'';
     const prompt=hint?'[ '+keyName+' ]  '+hint:'';
     if(this.ui.interact.textContent!==prompt)this.ui.interact.textContent=prompt;
     this.frameId=requestAnimationFrame(t=>this.frame(t));
@@ -223,7 +258,7 @@ class CityGame {
       g.fillStyle=grad;g.fillRect(0,0,W,mid+1);
       for(let j=0;j<18;j++){const gx=((j*131-offset*.25)%(W+60)+W+60)%(W+60);g.fillStyle='#75aaae24';g.fillRect(gx,0,1,mid)}
     }
-    const eye=fight?.94:.62;
+    const eye=fight?.94:this.yard?.83:.62;
     for(let y=Math.max(0,mid+1);y<H;y++){
       const d=eye*focal/(y-mid),stepX=-si*plane*2*d/W,stepY=co*plane*2*d/W;
       let wx=this.x+(co+si*plane)*d,wy=this.y+(si-co*plane)*d;
@@ -239,7 +274,10 @@ class CityGame {
           data[i+2]=(base+15+reflection+(stripe?25:0))*lit+91*fog;data[i+3]=255;
           continue;
         }
-        const rail=(wy>8.31&&wy<8.36)||(wy>9.11&&wy<9.16),n=rail?49:0;
+        const lane=this.yard?((wy-4.6)%3.4+3.4)%3.4:wy-8.31;
+        const rail=(lane>=0&&lane<.065)||(lane>.8&&lane<.865);
+        const sleeper=this.yard&&lane>-.01&&lane<1&&((wx%1.15)<.23);
+        const n=rail?68:sleeper?-24:0;
         data[i]=(this.floor[j]+n)*lit+133*fog;data[i+1]=(this.floor[j+1]+n)*lit+143*fog;data[i+2]=(this.floor[j+2]+n)*lit+142*fog;data[i+3]=255;
       }
     }
@@ -259,7 +297,7 @@ class CityGame {
     }
     if(!this.layer||this.layer.width!==W||this.layer.height!==H){this.layer=this.makeCanvas(W,H);this.layerCtx=this.layer.getContext('2d')}
     this.layerCtx.putImageData(this.buf,0,0);g.drawImage(this.layer,0,0);
-    const objs=fight?fight.sprites():[...stationProps,...(this.done===0?[{x:13.6,y:5.48,type:'gman',height:1.87,aspect:.46}]:[]),this.station,{...this.exit,type:this.done===2?'exitOpen':'exit'},...this.cells.filter((c,i)=>!c.inPlace&&i!==this.held)];
+    const objs=fight?fight.sprites():this.yard?this.yard.sprites():[this.spirit,...stationProps,...(this.done===0?[{x:13.6,y:5.48,type:'gman',height:1.87,aspect:.46}]:[]),this.station,{...this.exit,type:this.done===2?'exitOpen':'exit'},...this.cells.filter((c,i)=>!c.inPlace&&i!==this.held)];
     if(fight)this.drawTraps(g,fight,W,mid,focal,co,si,eye);
     objs.sort((a,b)=>this.distance(b)-this.distance(a));
     for(const o of objs){
@@ -277,12 +315,12 @@ class CityGame {
       const fog=g.createLinearGradient(0,mid-H*.2,0,mid+H*.13);
       fog.addColorStop(0,'#75a79a00');fog.addColorStop(.64,'#8eb9ac12');fog.addColorStop(1,'#93ac9e00');g.fillStyle=fog;g.fillRect(0,mid-H*.2,W,H*.33);
     }
-    this.drawGun(W,H);this.mapOverlay(W,H);this.drawBearing(W,H);
-    if(this.beam>.6){
+    if(this.yard?.armed)drawPulseRifle(this,W,H);else this.drawGun(W,H);this.mapOverlay(W,H);this.drawBearing(W,H);
+    if(this.beam>.6&&!this.yard?.armed){
       g.save();g.globalAlpha=(this.beam-.6)*.9;g.strokeStyle=fight?.holding?'#8cfbff':'#ffd398';g.lineWidth=2;
       g.beginPath();g.moveTo(W*.76,H*.8);g.quadraticCurveTo(W*.66,H*.61,W*.5,H*.5);g.stroke();g.restore();
     }
-    if(fight?.result==='won'){g.fillStyle='rgba(165,224,211,'+(1-(fight.outro/1.35))*.75+')';g.fillRect(0,0,W,H)}
+    if(fight?.result==='won'){g.fillStyle='rgba(165,224,211,'+(1-clamp(fight.outro/fight.endingLength,0,1))*.45+')';g.fillRect(0,0,W,H)}
   }
   drawTraps(g,e,W,mid,focal,co,si,eye){
     for(const t of e.traps){
@@ -307,10 +345,10 @@ class CityGame {
   }
   drawBearing(W,H){
     const e=this.encounter;
-    const obj=e?e.target:this.held>=0?this.station:this.done===2?this.exit:this.cells.filter(c=>!c.inPlace).sort((a,b)=>this.distance(a)-this.distance(b))[0];
+    const obj=e?e.target:this.yard?(this.yard.clear?yardGate:this.yard.contact||(!this.yard.armed?rebels[1]:yardGate)):this.held>=0?this.station:this.done===2?this.exit:this.cells.filter(c=>!c.inPlace).sort((a,b)=>this.distance(a)-this.distance(b))[0];
     if(!obj)return;
     const angle=Math.atan2(obj.y-this.y,obj.x-this.x)-this.angle,relative=Math.atan2(Math.sin(angle),Math.cos(angle));
-    const name=e?'G-MAN':this.held>=0?'RELE':this.done===2?'PORTTI':'KENNO';
+    const name=e?'G-MAN':this.yard?(this.yard.clear?'PORTTI':this.yard.armed?'PARTIO':'VASTARINTA'):this.held>=0?'RELE':this.done===2?'PORTTI':'KENNO';
     const label=(relative<-.65?'◀  ':'')+name+'  '+Math.round(this.distance(obj)*2.3)+' m'+(relative>.65?'  ▶':'');
     if(this.ui.bearing.textContent!==label)this.ui.bearing.textContent=label;
   }
@@ -341,7 +379,8 @@ class CityGame {
     this.map.forEach((row,y)=>[...row].forEach((v,x)=>{if(v!=='0'){g.fillStyle='#65706f';g.fillRect(x*scale,y*scale,scale+.1,scale+.1)}}));
     const dot=(o,color,r)=>{g.fillStyle=color;g.beginPath();g.arc(o.x*scale,o.y*scale,r,0,7);g.fill()};
     if(this.encounter){dot(this.encounter.target,'#ffb171',3);if(this.encounter.decoy)dot(this.encounter.decoy,'#80cddc',2.5);this.encounter.shots.forEach(s=>dot(s,s.returned?'#ffe3a5':'#89f8ff',1.8))}
-    else{this.cells.forEach((c,i)=>{if(!c.inPlace&&i!==this.held)dot(c,'#ff994e',2.4)});dot(this.station,'#92ebdf',2.8);if(this.done===2)dot(this.exit,'#98fdac',3)}
+    else if(this.yard){this.yard.allies.forEach(r=>dot(r,'#afe4be',2));this.yard.enemies.forEach(e=>dot(e,'#ff9469',2.5));if(this.yard.clear)dot(yardGate,'#a4ffd1',3)}
+    else{dot(this.spirit,'#9dedde',2.8);this.cells.forEach((c,i)=>{if(!c.inPlace&&i!==this.held)dot(c,'#ff994e',2.4)});dot(this.station,'#92ebdf',2.8);if(this.done===2)dot(this.exit,'#98fdac',3)}
     g.translate(this.x*scale,this.y*scale);g.rotate(this.angle);g.fillStyle='#fff';g.beginPath();g.moveTo(5,0);g.lineTo(-3,-3);g.lineTo(-2,0);g.lineTo(-3,3);g.fill();g.restore();
   }
 }

@@ -53,3 +53,16 @@ progress::-webkit-progress-bar{background:#414b50}#bossBar::-webkit-progress-val
 #bossStage{font-size:9px}#bossHud{top:14px;padding:8px 10px}.terminal #bearing{top:65px}#bossHud b{font-size:15px}#vitals{bottom:calc(4vh + 79px);min-width:114px}.hud{padding:7px 10px}.objective{max-width:83%}.objective span{font-size:13px}#notice{font-size:12px}.terminal #notice{top:21%}#phaseSplash{top:33%}#interaction{bottom:24%;font-size:12px}}
 @media(pointer:coarse){#vitals{bottom:222px}.terminal #interaction{bottom:32%}}
 @media(max-height:590px) and (min-width:651px){.casefile{bottom:16px}.menu .intro{margin:6px 0 12px}.campaignTitle{font-size:21px}.menu .subitem{height:35px}.menu nav{gap:5px}.terminal .objective{display:none}.terminal .game-header{justify-content:flex-end}#phaseSplash{top:31%}.terminal #notice{top:25%}}
+
+/* Transmission captions sit between the reticle and the player's equipment. */
+#radio{--voice:#90e4d9;position:absolute;z-index:2;left:50%;bottom:4.8vh;transform:translateX(-50%);width:min(510px,51vw);display:flex;gap:11px;align-items:center;padding:11px 16px 12px 12px;border-left:3px solid var(--voice);box-shadow:0 3px 22px #050d1255;background:linear-gradient(90deg,#101c20f5,#101a20ed);pointer-events:none;color:#edf1ed}
+#radio i{flex:none;width:34px;height:38px;opacity:.9;background:repeating-linear-gradient(90deg,var(--voice) 0 2px,transparent 2px 5px);clip-path:polygon(0 43%,8% 42%,15% 27%,23% 35%,32% 16%,39% 30%,45% 0,53% 5%,60% 31%,69% 17%,77% 39%,87% 31%,100% 44%,100% 56%,87% 69%,77% 61%,69% 83%,60% 69%,53% 95%,45% 100%,39% 70%,32% 84%,23% 65%,15% 73%,8% 58%,0 57%)}
+#radio small,#radio b{font:600 10px var(--mono);letter-spacing:.08em}#radio small{color:#a5b3b2;float:right;font-size:9px;line-height:15px}#radio b{display:block;color:var(--voice);text-transform:uppercase}#radio>div{flex:1}#radio p{margin:4px 0 0;font:500 clamp(13px,1.18vw,17px)/1.35 var(--sans);text-shadow:0 1px 2px #080e10}
+#crosshair.hit{border-color:#c9ffff;transform:translate(-50%,-50%) scale(1.55);box-shadow:0 0 6px #7df9ff} .yard .hud{border-color:#8ddce5}
+.file-photo.contacts{width:81px;background:linear-gradient(135deg,#48605e,#182a32)}
+.contacts img{filter:saturate(.75);width:185px;left:24%;top:-2px}.contacts img+img{width:145px;left:70%;top:-3px}
+@media(max-width:760px){#radio{width:min(480px,67vw);bottom:5vh}#radio i{display:none}#radio small{display:none}}
+@media(max-width:650px){.casefile{grid-template-columns:1fr 126px}.casefile .file-body{grid-row:span 2}.casefile button{width:126px}.casefile #practiceBtn{border-top:1px solid #899c9740}.file-photo.contacts{width:46px}.contacts img{width:112px}.contacts img+img{width:88px}.file-copy .micro{font-size:8px}#radio{width:88vw;bottom:12vh;padding:8px 11px}#radio p{font-size:13px}.yard #notice{max-width:78%}}
+@media(pointer:coarse){#radio{bottom:16px;width:calc(100% - 225px);min-width:0;padding:8px}#radio small,#radio i{display:none}#radio p{font-size:12px}}
+@media(pointer:coarse) and (max-width:540px){#radio{width:92vw;bottom:auto;top:23%;padding:6px 9px}.terminal #radio{top:13%}.terminal #notice{top:25%}.yard #notice{top:15%}}
+@media(max-height:550px) and (min-width:541px){#radio{bottom:7px;width:52vw}#radio p{font-size:12px}#radio i{display:none}.terminal #radio{bottom:4px}}

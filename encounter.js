@@ -96,11 +96,11 @@ class GManEncounter {
     if(this.result)return;
     const g=this.game,previous=this.phase;
     this.burst(this.target,'hit');this.hitGlow=.55;g.ui.tone(680);this.hits++;
-    if(this.hits>=6){this.result='won';this.outro=1.35;this.shots=[];this.traps=[];g.updateUI();return}
+    if(this.hits>=6){this.result='won';g.ui.radio.clear();g.ui.radio.say('goodbye');this.endingLength=radioClips.goodbye[1]+.65;this.outro=this.endingLength;this.shots=[];this.traps=[];g.updateUI();return}
     this.oldPosition=this.target;this.afterimage=.75;this.anchor=(this.anchor+1)%rifts.length;
     this.decoyGone=false;this.nextOrb=2.15;this.nextTrap=Math.max(3.1,this.nextTrap);this.shots=[];
     if(this.phase!==previous){
-      this.phaseIntro=3;this.traps=[];this.health=Math.min(100,this.health+25);
+      g.ui.radio.say(this.phase===1?'fracture':'decoy');this.phaseIntro=3;this.traps=[];this.health=Math.min(100,this.health+25);
       this.nextOrb=2.9;this.nextTrap=4;g.tell(this.phase===1?'G-Man murtaa lattian. Väistä merkitty alue.':'Kopio hehkuu sinisenä. Etsi oikean G-Manin kultainen kehä.');
       g.ui.save();
     }else g.tell('Osuma. Seuraa siirtyvää G-Mania.');
