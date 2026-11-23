@@ -24,7 +24,7 @@ class CityGame {
     this.station={x:12.6,y:6.2,type:'station'}; this.exit={x:17.6,y:3.28,type:'exit'};
     this.textures=[null,...[0,1,2].map(n=>this.makeWall(n))];this.floor=this.makeFloor();this.sky=this.makeSky();
     this.sprites={};for(const type of ['cell','station','exit','exitOpen'])this.sprites[type]=this.makeSprite(type);
-    this.keys=new Set();this.joy={x:0,y:0};this.running=false;this.frameId=0;
+    this.keys=new Set();this.pressed=new Set();this.joy={x:0,y:0};this.pendingJoy=null;this.running=false;this.frameId=0;
     this.held=-1;this.beam=0;this.bob=0;this.messageEnd=0;this.cameraPitch=0;
     this.pixelBudget=310000;this.frameSample=0;this.sampleFrames=0;
     this.reset();
@@ -149,15 +149,30 @@ class CityGame {
       rect('#242e2e',32,66,63,32);g.fillStyle=type==='exitOpen'?'#a9ffcd':'#e3a06c';g.font='bold 20px monospace';g.fillText('EXIT',39,89);
     }return c;
   }
+  clearInput(){
+    this.keys.clear();
+    this.pressed.clear();
+    this.joy={x:0,y:0};
+    this.pendingJoy=null;
+    if(this.yard)this.yard.trigger=false;
+  }
+  press(code){
+    if(!this.keys.has(code))this.pressed.add(code);
+    this.keys.add(code);
+  }
+  setStick(x,y){
+    this.joy={x,y};
+    if(x||y)this.pendingJoy=this.joy;
+  }
   start(){
     this.running=true;this.ui.radio.resume();
     if(!this.encounter&&!this.yard&&!this.storyStarted){
       this.storyStarted=true;
       if(!this.done)this.ui.radio.say('arrival','station');else this.ui.radio.say(this.done===1?'firstCell':'secondCell');
     }
-    this.frameSample=0;this.sampleFrames=0;this.keys.clear();this.joy={x:0,y:0};this.last=performance.now();this.frameId=requestAnimationFrame(t=>this.frame(t));this.updateUI();
+    this.frameSample=0;this.sampleFrames=0;this.clearInput();this.last=performance.now();this.frameId=requestAnimationFrame(t=>this.frame(t));this.updateUI();
   }
-  stop(){this.running=false;this.ui.radio.pause();if(this.yard)this.yard.trigger=false;cancelAnimationFrame(this.frameId);this.keys.clear();this.joy={x:0,y:0}}
+  stop(){this.running=false;this.ui.radio.pause();cancelAnimationFrame(this.frameId);this.clearInput()}
   tell(msg){this.ui.notice.textContent=msg;this.messageEnd=performance.now()+2800}
   distance(o){return Math.hypot(o.x-this.x,o.y-this.y)}
   visible(o){
@@ -211,10 +226,14 @@ class CityGame {
       else if(average<.021)this.pixelBudget=Math.min(310000,Math.ceil(this.pixelBudget*1.12));
       this.frameSample=0;this.sampleFrames=0;
     }
-    const key=(a,b)=>Number(this.keys.has(a)||this.keys.has(b));
+    // Keep a tap until the simulation has sampled it at least once.
+    const down=code=>this.keys.has(code)||this.pressed.has(code);
+    const key=(a,b)=>Number(down(a)||down(b));
+    const stick=this.pendingJoy||this.joy;
     this.angle+=(key('ArrowRight')-key('ArrowLeft'))*dt*1.9;
-    let f=key('KeyW','ArrowUp')-key('KeyS','ArrowDown')-this.joy.y,s=key('KeyD')-key('KeyA')+this.joy.x;
+    let f=key('KeyW','ArrowUp')-key('KeyS','ArrowDown')-stick.y,s=key('KeyD')-key('KeyA')+stick.x;
     const norm=Math.max(1,Math.hypot(f,s)),speed=(this.keys.has('ShiftLeft')||this.keys.has('ShiftRight')?3.9:2.45)*dt/norm;
+    if(dt>0){this.pressed.clear();this.pendingJoy=null}
     let co=Math.cos(this.angle),si=Math.sin(this.angle),dx=(co*f-si*s)*speed,dy=(si*f+co*s)*speed;
     this.walkForward=f;this.walkSide=s;this.dashCooldown=Math.max(0,this.dashCooldown-dt);
     if(this.dashTime>0){
@@ -249,14 +268,16 @@ class CityGame {
     const splash=this.encounter?.phaseIntro>0?phaseTitles[this.encounter.phase]:this.yard?.banner>0?'Aalto '+(this.yard.wave+1)+' / 3 · '+yardWaves[this.yard.wave].title:'';
     this.ui.phaseSplash.hidden=!splash;
     if(splash&&this.ui.phaseSplash.textContent!==splash)this.ui.phaseSplash.textContent=splash;
-    let keyName=matchMedia('(pointer:coarse)').matches?'λ':'E';
+    const keyName=this.ui.arena.classList.contains('screen-controls')?'λ':'E';
     const hint=this.encounter?this.encounter.hint():this.yard?this.yard.hint:this.done===2&&this.distance(this.exit)<1.8?'Siirry ratapihalle':this.held>=0&&this.distance(this.station)<2.4?'Kytke kenno':this.held<0&&this.nearbyCell()>=0?'Tartu kennoon' :this.held<0&&this.nearSpirit?'Kuuntele kaikua':'';
     const prompt=hint?'[ '+keyName+' ]  '+hint:'';
     if(this.ui.interact.textContent!==prompt)this.ui.interact.textContent=prompt;
     this.frameId=requestAnimationFrame(t=>this.frame(t));
   }
   render(time){
-    const cv=this.canvas,g=this.ctx,ratio=cv.clientWidth/Math.max(1,cv.clientHeight);
+    const cv=this.canvas,g=this.ctx;
+    if(!cv.clientWidth||!cv.clientHeight)return;
+    const ratio=cv.clientWidth/cv.clientHeight;
     const W=Math.max(2,Math.floor(Math.min(830,cv.clientWidth,Math.sqrt(this.pixelBudget*ratio))/2)*2),H=Math.max(2,Math.round(W/ratio));
     if(cv.width!==W||cv.height!==H||!this.buf){cv.width=W;cv.height=H;this.buf=g.createImageData(W,H);this.z=new Float32Array(W)}
     const co=Math.cos(this.angle),si=Math.sin(this.angle),plane=Math.min(1.1,Math.max(.48,ratio*.44)),focal=W/(2*plane);

@@ -7,7 +7,18 @@ const prefs=Object.assign({sound:true,volume:65,sensitivity:50},read('lambda.set
 const radio=new CampaignRadio($('radio'),prefs);
 let game=null,view='',parentView='',previousFocus=null,inGame=false,audioCtx,master,drone,toastTimer,practice=false,footBuffer;
 let progress=read('lambda.progress',null),drag=null,padPointer=null;
-const coarse=()=>matchMedia('(pointer:coarse)').matches;
+function showScreenControls(show){
+  arena.classList.toggle('screen-controls',show);
+  $('padToggle').setAttribute('aria-pressed',String(show));
+  if(!show)releasePad();
+}
+showScreenControls(prefs.screenControls??matchMedia('(any-pointer:coarse)').matches);
+$('padToggle').onclick=()=>{
+  prefs.screenControls=!arena.classList.contains('screen-controls');
+  showScreenControls(prefs.screenControls);
+  write('lambda.settings',prefs);
+  $('world').focus({preventScroll:true});
+};
 function soundInit(){
   if(!prefs.sound)return;
   try{if(!audioCtx){audioCtx=new (window.AudioContext||window.webkitAudioContext)();master=audioCtx.createGain();master.connect(audioCtx.destination);drone=audioCtx.createOscillator();const hum=audioCtx.createGain();hum.gain.value=.016;drone.frequency.value=54.5;drone.type='sine';drone.connect(hum).connect(master);drone.start()}radio.connect(audioCtx,master);audioCtx.resume().catch(()=>{});master.gain.setTargetAtTime(prefs.volume/100,audioCtx.currentTime,.03)}catch{}
@@ -56,7 +67,7 @@ function renderPanel(){
   if(name==='original'){
     heading='Half-Life 2';html='<p class="helper">Pelaa alkuperäistä kampanjaa selaimella. Avaa GeForce NOW, kirjaudu sisään ja hae peli nimellä Half-Life 2. Tarvitset pelin Steam-kirjastoosi.</p><a class="choice primary" href="https://play.geforcenow.com/" target="_blank" rel="noopener"><span><strong>Avaa GeForce NOW</strong><small>Pilvipeli · Avautuu uuteen välilehteen</small></span>'+icons('play')+'</a><a class="choice" href="steam://rungameid/220"><span><strong>Käynnistä Steamissa</strong><small>Avaa tietokoneelle asennettu peli</small></span>'+icons('play')+'</a><a class="textlink" href="https://store.steampowered.com/app/220/HalfLife_2/" target="_blank" rel="noopener">Half-Life 2 Steam-kaupassa</a>';
   }else if(name==='controls'){
-    heading='Ohjaimet';html='<p class="fieldlabel">CITY 17 · FANITEHTÄVÄ</p>'+row('Liiku',['W','A','S','D'])+row('Katso ympärillesi',['Hiiri'])+row('Käänny',['←','→'])+row('Juokse',['Shift'])+row('Tartu, vapauta tai käytä',['E','Hiiren 1'])+row('Ammu pulssikiväärillä',['Hiiren 1','F'])+row('Syöksy ja väistä',['Välilyönti'])+row('Tauko',['Esc'])+'<p class="helpfooter">Kosketusnäytöllä liikut vasemmalla ohjaimella ja katsot ympärillesi pyyhkäisemällä. λ-painikkeella voit käyttää esineitä ja siepata tai palauttaa energiapallon. Ratapihalla pidä ampumapainiketta pohjassa. Pulssikiväärissä on loputtomasti panoksia. Betonivallit ja rahtikontit pysäyttävät vihollisten tulen ja järistykset. Syöksy liikesuuntaan omalla painikkeellaan.</p>';
+    heading='Ohjaimet';html='<p class="fieldlabel">CITY 17 · FANITEHTÄVÄ</p>'+row('Liiku',['W','A','S','D'])+row('Eteen ja taakse',['↑','↓'])+row('Katso ympärillesi',['Hiiri'])+row('Käänny',['←','→'])+row('Juokse',['Shift'])+row('Tartu, vapauta tai käytä',['E','Hiiren 1'])+row('Ammu pulssikiväärillä',['Hiiren 1','F'])+row('Syöksy ja väistä',['Välilyönti'])+row('Tauko',['Esc'])+'<p class="helpfooter">Ruutuohjaimen saa esiin pelin oikeasta yläkulmasta. Liiku vetämällä vasenta ohjainta ja käänny vetämällä pelikenttää. λ-painikkeella voit käyttää esineitä ja siepata tai palauttaa energiapallon. Ratapihalla pidä ampumapainiketta pohjassa. Pulssikiväärissä on loputtomasti panoksia. Betonivallit ja rahtikontit pysäyttävät vihollisten tulen ja järistykset. Syöksy liikesuuntaan omalla painikkeellaan.</p>';
   }else if(name==='settings'){
     heading='Asetukset';html='<div class="row"><span>Äänet</span><button id="soundToggle" class="toggle"></button></div><div class="row"><label for="volume">Äänenvoimakkuus<small id="volumeValue"></small></label><input id="volume" type="range" min="0" max="100" value="'+Number(prefs.volume)+'"></div><div class="row"><label for="sensitivity">Hiiren herkkyys<small id="sensValue"></small></label><input id="sensitivity" type="range" min="1" max="100" value="'+Number(prefs.sensitivity)+'"></div><p class="helpfooter">Asetukset tallentuvat tähän selaimeen.</p>';
   }else if(name==='pause'){
@@ -103,7 +114,7 @@ function getGame(){
   return game;
 }
 function lock(){
-  if(coarse()||document.pointerLockElement||!$('world').requestPointerLock)return;
+  if(arena.classList.contains('screen-controls')||document.pointerLockElement||!$('world').requestPointerLock)return;
   try{const promise=$('world').requestPointerLock();if(promise?.catch)promise.catch(()=>{})}catch{}
 }
 function unlock(){if(document.pointerLockElement&&document.exitPointerLock)document.exitPointerLock()}
@@ -115,11 +126,11 @@ function begin(mode='continue'){
   g.start();$('world').focus();
   if(g.encounter)g.tell('Sieppaa lähestyvä pallo ja palauta se G-Maniin.');
   else if(g.yard)g.tell(g.yard.armed?'Seuraa ratapihan opastinta.':'Karo viittoo sinua lähemmäs.');
-  else g.tell(g.held>=0?'Vie kenno siniselle releelle.':g.done===2?'Kulje vihreälle portille.':'Etsi oranssit kennot ja vie ne siniselle releelle.');
-  checkpoint();lock();
+  else g.tell(g.held>=0?'Vie kenno siniselle releelle.':g.done===2?'Kulje vihreälle portille.':(arena.classList.contains('screen-controls')?'Liiku vetämällä vasenta ohjainta.':'Liiku WASD-näppäimillä tai nuolilla.'));
+  checkpoint();
 }
 function retry(){
-  closePanel();if(game.yard)game.openYard(game.yard.checkpoint());else game.openTerminal(game.encounter.checkpoint);game.start();$('world').focus();lock();
+  closePanel();if(game.yard)game.openYard(game.yard.checkpoint());else game.openTerminal(game.encounter.checkpoint);game.start();$('world').focus();
 }
 function defeat(){checkpoint();unlock();openPanel('defeat')}
 function updatePlayLabel(){
@@ -128,7 +139,7 @@ function updatePlayLabel(){
   document.querySelectorAll('.route li').forEach((item,i)=>{if(i===chapter)item.setAttribute('aria-current','step');else item.removeAttribute('aria-current')});
 }
 function pause(){if(!game?.running)return;game.stop();drag=null;releasePad();checkpoint();unlock();openPanel('pause')}
-function resume(){closePanel();game.start();$('world').focus();soundInit();lock()}
+function resume(){closePanel();game.start();$('world').focus();soundInit()}
 function mainMenu(){radio.clear();if(game?.running)game.stop();if(inGame&&!game.completed)checkpoint();inGame=false;unlock();arena.hidden=true;home.hidden=false;closePanel();practice=false;updatePlayLabel();$('playBtn').focus()}
 function win(){if(!practice){progress=null;write('lambda.progress',null)}tone(540);unlock();openPanel('winner')}
 $('playBtn').onclick=()=>begin();$('practiceBtn').onclick=()=>begin('practice');$('originalBtn').onclick=()=>openPanel('original');$('settingsBtn').onclick=()=>{parentView='home';openPanel('settings')};$('controlsBtn').onclick=()=>{parentView='home';openPanel('controls')};$('soundBtn').onclick=toggleSound;$('closePanel').onclick=back;$('pauseBtn').onclick=pause;
@@ -136,22 +147,39 @@ panel.addEventListener('cancel',e=>{e.preventDefault();back()});
 panel.addEventListener('click',e=>{if(e.target!==panel)return;const r=panel.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)back()});
 $('fullBtn').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else if(document.documentElement.requestFullscreen)await document.documentElement.requestFullscreen();else toast('Selain ei tue koko näytön tilaa.')}catch{toast('Koko näytön tila ei ole käytettävissä tässä näkymässä.')}};
 document.addEventListener('fullscreenchange',()=>{let label=document.fullscreenElement?'Poistu koko näytöstä':'Koko näyttö';$('fullBtn').setAttribute('aria-label',label);$('fullBtn').title=label;$('fullIcon').setAttribute('href',document.fullscreenElement?'#shrink':'#full')});
-document.addEventListener('keydown',e=>{
-  if(panel.open)return;
+const gameKeys=new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Escape','KeyE','KeyF','KeyW','KeyA','KeyS','KeyD','ShiftLeft','ShiftRight']);
+const keyAliases={w:'KeyW',a:'KeyA',s:'KeyS',d:'KeyD',e:'KeyE',f:'KeyF',' ':'Space',Shift:'ShiftLeft'};
+function gameKey(e){
+  if(gameKeys.has(e.code))return e.code;
+  return keyAliases[e.key]||keyAliases[e.key?.toLowerCase()]||e.key;
+}
+window.addEventListener('keydown',e=>{
+  if(panel.open||e.ctrlKey||e.metaKey||e.altKey)return;
   if(game?.running){
-    if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Escape','KeyE','KeyF','KeyW','KeyA','KeyS','KeyD','ShiftLeft','ShiftRight'].includes(e.code))e.preventDefault();
-    if(e.code==='Escape'){pause();return}if(e.code==='Space'&&!e.repeat){game.dash();return}if(e.code==='KeyF'&&!e.repeat){game.yard?.fire()}if(e.code==='KeyE'&&!e.repeat){game.action();return}game.keys.add(e.code);return;
+    const code=gameKey(e);
+    if(!gameKeys.has(code))return;
+    e.preventDefault();
+    if(code==='Escape'){if(!e.repeat)pause();return}
+    if(code==='Space'){if(!e.repeat)game.dash();return}
+    if(code==='KeyE'){if(!e.repeat)game.action();return}
+    if(code==='KeyF'&&!e.repeat)game.yard?.fire();
+    game.press(code);
+    return;
   }
   const nav=[...document.querySelectorAll('.navitem,#practiceBtn')],i=nav.indexOf(document.activeElement);
   if(e.code==='ArrowDown'||e.code==='ArrowUp'){e.preventDefault();nav[(i<0?(e.code==='ArrowDown'?0:nav.length-1):(i+(e.code==='ArrowDown'?1:-1)+nav.length)%nav.length)].focus()}
   if(e.key==='Enter'&&document.activeElement===document.body){e.preventDefault();$('playBtn').click()}
-});
-document.addEventListener('keyup',e=>game?.keys.delete(e.code));
+},true);
+window.addEventListener('keyup',e=>game?.keys.delete(gameKey(e)),true);
 function look(dx,dy){if(!game?.running)return;const sense=.00055+prefs.sensitivity*.00004;game.angle+=dx*sense;game.cameraPitch=Math.min(.29,Math.max(-.29,game.cameraPitch-dy*sense*.5))}
 document.addEventListener('mousemove',e=>{if(document.pointerLockElement===$('world'))look(e.movementX,e.movementY)});
-document.addEventListener('pointerlockchange',()=>{if(!document.pointerLockElement&&game?.running)pause()});
+document.addEventListener('pointerlockchange',()=>{
+  drag=null;
+  if(game?.yard)game.yard.trigger=false;
+});
 $('world').addEventListener('pointerdown',e=>{
   if(!game?.running||e.button!==0)return;
+  $('world').focus({preventScroll:true});
   if(document.pointerLockElement===$('world')){const y=game.yard;if(y?.armed)y.trigger=true;game.action(true);return}
   drag={x:e.clientX,y:e.clientY,id:e.pointerId,moved:0};$('world').setPointerCapture(e.pointerId);
 });
@@ -164,10 +192,10 @@ $('actBtn').onpointerdown=e=>{
   if(game.yard?.armed)game.yard.trigger=true;game.action(true);
 };
 $('actBtn').onclick=e=>{if(e.detail===0)game?.action(true)};$('dashBtn').onclick=()=>game?.dash();
-function movePad(e){if(e.pointerId!==padPointer)return;const r=$('pad').getBoundingClientRect(),dx=e.clientX-r.left-r.width/2,dy=e.clientY-r.top-r.height/2,lim=Math.max(31,Math.hypot(dx,dy));game.joy.x=dx/lim;game.joy.y=dy/lim;$('stick').style.transform='translate('+game.joy.x*29+'px,'+game.joy.y*29+'px)'}
-function releasePad(){padPointer=null;if(game)game.joy={x:0,y:0};$('stick').style.transform=''}
-$('pad').onpointerdown=e=>{if(!game?.running)return;padPointer=e.pointerId;$('pad').setPointerCapture(e.pointerId);movePad(e)};$('pad').onpointermove=movePad;$('pad').onpointerup=releasePad;$('pad').onpointercancel=releasePad;
-window.addEventListener('blur',()=>{if(game?.running)pause()});document.addEventListener('visibilitychange',()=>{if(document.hidden){if(game?.running)pause();if(audioCtx)audioCtx.suspend().catch(()=>{})}else if(prefs.sound&&audioCtx)soundInit()});
+function movePad(e){if(e.pointerId!==padPointer)return;const r=$('pad').getBoundingClientRect(),dx=e.clientX-r.left-r.width/2,dy=e.clientY-r.top-r.height/2,lim=Math.max(31,Math.hypot(dx,dy));game.setStick(dx/lim,dy/lim);$('stick').style.transform='translate('+game.joy.x*29+'px,'+game.joy.y*29+'px)'}
+function releasePad(){padPointer=null;if(game)game.setStick(0,0);$('stick').style.transform=''}
+$('pad').onpointerdown=e=>{if(!game?.running||padPointer!==null)return;e.preventDefault();padPointer=e.pointerId;$('pad').setPointerCapture(e.pointerId);movePad(e)};$('pad').onpointermove=movePad;$('pad').onlostpointercapture=$('pad').onpointerup=$('pad').onpointercancel=e=>{if(e.pointerId===padPointer)releasePad()};
+window.addEventListener('blur',()=>{if(game?.running){drag=null;releasePad();game.clearInput()}});document.addEventListener('visibilitychange',()=>{if(document.hidden){if(game?.running)pause();if(audioCtx)audioCtx.suspend().catch(()=>{})}else if(prefs.sound&&audioCtx)soundInit()});
 window.addEventListener('pagehide',()=>{if(inGame)checkpoint()});
 setInterval(()=>{if(game?.running)checkpoint()},5000);
 reflectSound();

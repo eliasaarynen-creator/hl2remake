@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#101416"><title>Half-Life 2 · Aikakatkos</title>
 <meta name="description" content="Pelaa Aikakatkos-fanikampanjaa. Avaa portti City 17:ssä ja kohtaa G-Man kolmivaiheisessa pomotaistelussa.">
-<link rel="icon" href="assets/lambda.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css">
+<link rel="icon" href="assets/lambda.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=5dfdf7d9f5">
 <link rel="preload" as="image" href="assets/city17.webp">
 </head>
 <body>
@@ -45,7 +45,7 @@
 </main>
 <section id="arena" hidden aria-label="City 17:n fanitehtävä">
 <canvas id="world" tabindex="0" aria-label="Pelikenttä. Liiku WASD-näppäimillä ja käänny nuolilla."></canvas>
-<div class="game-header"><div class="objective"><b id="sectionName">ASEMA-AUKIO</b><span id="mission"></span></div><button id="pauseBtn" class="iconButton" aria-label="Tauko"><svg class="icon"><use href="#pause"/></svg></button></div>
+<div class="game-header"><div class="objective"><b id="sectionName">ASEMA-AUKIO</b><span id="mission"></span></div><div class="game-tools"><button id="padToggle" aria-pressed="false" aria-controls="pad">Ruutuohjain</button><button id="pauseBtn" class="iconButton" aria-label="Tauko"><svg class="icon"><use href="#pause"/></svg></button></div></div>
 <div id="bossHud" hidden><div><b>G-MAN</b><span id="bossStage"></span></div><progress id="bossBar" value="6" max="6" aria-label="G-Manin jäljellä oleva voima"></progress></div>
 <div id="bearing"></div><div id="phaseSplash" hidden></div><div id="hazardWarning" role="status" hidden>AIKAREPEÄMÄ · VÄISTÄ</div><div id="crosshair"></div><div id="notice" role="status"></div><div class="hud"><span class="hudLabel" id="weaponKind">PAINOVOIMA-ASE</span><b id="weaponState">VALMIS</b><span class="dash-line">SYÖKSY <span id="dashState">VALMIS</span></span></div>
 <div id="vitals" hidden><div><span>HEV · KUNTO</span><b id="health">100 %</b></div><progress id="healthBar" max="100" value="100" aria-label="Pelaajan kunto"></progress></div>
@@ -55,5 +55,5 @@
 </section>
 <dialog id="panel" aria-labelledby="panelTitle"><div class="dialog-top"><span class="dialog-brand"><svg><use href="#lambda"/></svg> LAMBDA TERMINAALI</span><button id="closePanel" aria-label="Sulje"><svg class="icon"><use href="#close"/></svg></button></div><div id="panelContent"></div></dialog>
 <div id="toast" role="status"></div>
-<script src="radio-clips.js" defer></script><script src="story.js" defer></script><script src="yard.js" defer></script><script src="yard-art.js" defer></script><script src="yard-scene.js" defer></script><script src="actors.js" defer></script><script src="story-models.js" defer></script><script src="weapon-models.js" defer></script><script src="encounter.js" defer></script><script src="art.js" defer></script><script src="game.js" defer></script><script src="app.js" defer></script>
+<script src="radio-clips.js?v=98f3e893ba" defer></script><script src="story.js?v=5b1dea20b5" defer></script><script src="yard.js?v=92f0695605" defer></script><script src="yard-art.js?v=e847a64168" defer></script><script src="yard-scene.js?v=b453307b3d" defer></script><script src="actors.js?v=7a9fbcbd1b" defer></script><script src="story-models.js?v=c8bee28f61" defer></script><script src="weapon-models.js?v=bd6c1002f2" defer></script><script src="encounter.js?v=8c5a755215" defer></script><script src="art.js?v=04d6ab3fa1" defer></script><script src="game.js?v=ef9bb0f883" defer></script><script src="app.js?v=0f0eb351f9" defer></script>
 </body></html>
