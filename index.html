@@ -3,8 +3,9 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#101416"><title>Half-Life 2 · Aikakatkos</title>
-<meta name="description" content="Pelaa Aikakatkos-fanikampanjaa. Avaa portti City 17:ssä ja kohtaa G-Man kolmivaiheisessa pomotaistelussa.">
+<meta name="description" content="Pelaa Aikakatkos-fanikampanjaa. Näe G-Manin, Karon ja Särön kohtaaminen metrovaunun ikkunasta ja jatka asema-aukiolle City 17:ssä.">
 <link rel="icon" href="assets/lambda.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=1a8ca537a3">
+<link rel="stylesheet" href="metro.css?v=5a66b51438">
 <link rel="preload" as="image" href="assets/city17.webp">
 </head>
 <body>
@@ -30,6 +31,7 @@
 <h2>Aikakatkos</h2>
 <nav aria-label="Pelivalikko">
 <button class="navitem" id="playBtn"><span id="playText">Aloita kampanja</span></button>
+<button class="navitem" id="metroReplayBtn" hidden>Katso luku 0 · Metromatka</button>
 <button class="navitem" id="practiceBtn">Harjoittele G-Mania</button>
 <button class="navitem" id="controlsBtn">Ohjaimet</button>
 <button class="navitem" id="settingsBtn">Asetukset</button>
@@ -39,10 +41,29 @@
 <div class="menu-tools"><button id="soundBtn" aria-pressed="true"><svg class="icon"><use id="soundIcon" href="#sound"/></svg><span id="soundName">Äänet päällä</span></button><button id="fullBtn" aria-label="Koko näyttö"><svg class="icon"><use id="fullIcon" href="#full"/></svg></button></div>
 </main>
 <section id="arena" hidden aria-label="City 17:n fanitehtävä">
-<div id="world" role="application" tabindex="0" aria-label="Pelikenttä. Liiku WASD-näppäimillä tai nuolilla."><div id="camera" aria-hidden="true"></div></div>
+<div id="world" role="application" tabindex="0" aria-label="Pelikenttä. Liiku WASD-näppäimillä tai nuolilla."><div id="camera" aria-hidden="true"></div>
+<div id="metroCar" hidden aria-hidden="true">
+  <div class="metro-interior">
+    <div class="metro-destination"><span id="metroDial">M2 · RAIDE 09</span></div>
+    <div class="metro-window">
+      <div id="metroOutside">
+        <div id="metroPlatform"></div>
+        <div id="metroActors">
+          <i id="metroSignal"></i>
+          <i id="metroKaro" class="metro-figure"></i><i id="metroSaro" class="metro-figure"></i><i id="metroGman" class="metro-figure"></i>
+          <i id="metroShield"></i><i id="metroOrb"></i><i id="metroBolt"></i><i id="metroSpark"></i>
+        </div>
+        <div id="metroTunnel"></div><div id="metroBeam"></div>
+      </div>
+      <div class="metro-glass"></div>
+    </div>
+    <div class="metro-grab"></div><div class="metro-seat"></div><div class="metro-vent"></div>
+  </div>
+  <div id="metroTitle"><small>LUKU 0</small><strong>Viimeinen vuoro</strong></div>
+</div></div>
 <div id="viewmodel" aria-hidden="true"><div id="weaponRig"></div></div>
 <svg id="radar" viewBox="0 0 32 20" aria-label="Kampanjan pienoiskartta"></svg>
-<div class="game-header"><div class="objective"><b id="sectionName">ASEMA-AUKIO</b><span id="mission"></span></div><div class="game-tools"><button id="padToggle" aria-pressed="false" aria-controls="pad">Ruutuohjain</button><button id="pauseBtn" class="iconButton" aria-label="Tauko"><svg class="icon"><use href="#pause"/></svg></button></div></div>
+<div class="game-header"><div class="objective"><b id="sectionName">ASEMA-AUKIO</b><span id="mission"></span></div><div class="game-tools"><button id="skipMetro" hidden>Ohita metromatka</button><button id="padToggle" aria-pressed="false" aria-controls="pad">Ruutuohjain</button><button id="pauseBtn" class="iconButton" aria-label="Tauko"><svg class="icon"><use href="#pause"/></svg></button></div></div>
 <div id="bossHud" hidden><div><b>G-MAN</b><span id="bossStage"></span></div><progress id="bossBar" value="6" max="6" aria-label="G-Manin jäljellä oleva voima"></progress></div>
 <div id="bearing"></div><div id="phaseSplash" hidden></div><div id="hazardWarning" role="status" hidden>AIKAREPEÄMÄ · VÄISTÄ</div><div id="crosshair"></div><div id="notice" role="status"></div><div class="hud"><span class="hudLabel" id="weaponKind">PAINOVOIMA-ASE</span><b id="weaponState">VALMIS</b><span class="dash-line">SYÖKSY <span id="dashState">VALMIS</span></span></div>
 <div id="vitals" hidden><div><span>HEV · KUNTO</span><b id="health">100 %</b></div><progress id="healthBar" max="100" value="100" aria-label="Pelaajan kunto"></progress></div>
@@ -60,6 +81,7 @@
 <script src="models.js?v=cd03b25126" defer></script>
 <script src="projection.js?v=910d3d73aa" defer></script>
 <script src="scene.js?v=4b7a3a7ba6" defer></script>
-<script src="game.js?v=35ed847a43" defer></script>
-<script src="app.js?v=792dd1345e" defer></script>
+<script src="metro.js?v=59137ed2c6" defer></script>
+<script src="game.js?v=adec37b21f" defer></script>
+<script src="app.js?v=3c20beb959" defer></script>
 </body></html>

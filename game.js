@@ -27,6 +27,7 @@ class CityGame {
     this.reset();
   }
   reset() {
+    this.closeMetro();
     this.map=this.streetMap;this.encounter=null;this.yard=null;this.storyStarted=false;this.ui.radio.clear();this.dashTime=0;this.dashCooldown=0;
     this.dashX=0;this.dashY=0;this.walkForward=0;this.walkSide=0;this.footstep=0;
     this.resetMovement();
@@ -41,6 +42,27 @@ class CityGame {
     return {...pos,type:'soul',height:1.88,aspect:.427,z:.06+.055*Math.sin(this.elapsed*2.6),alpha:.92};
   }
   get nearSpirit(){return this.distance(this.spirit)<3.8&&this.visible(this.spirit)&&Math.cos(Math.atan2(this.spirit.y-this.y,this.spirit.x-this.x)-this.angle)>.82}
+  openMetro(time=0){
+    this.metro=new MetroRide(this,time);
+    this.ui.notice.textContent='';
+    this.updateUI();
+  }
+  closeMetro(){
+    if(this.metro){this.metro.close();this.metro=null}
+  }
+  finishMetro(){
+    if(!this.metro)return;
+    if(this.ui.replayFinished())return;
+    const elapsed=this.elapsed;
+    this.reset();this.elapsed=elapsed;
+    this.clearInput();this.startStationStory();this.updateUI();
+    this.tell('Asema-aukio · Etsi junanlähettäjä laiturilta.');this.ui.save();
+  }
+  startStationStory(){
+    if(this.storyStarted)return;
+    this.storyStarted=true;
+    if(!this.done)this.ui.radio.say('arrival','station');else this.ui.radio.say(this.done===1?'firstCell':'secondCell');
+  }
   openYard(checkpoint={}){
     this.resetMovement();
     this.ui.notice.textContent='';this.encounter=null;this.yard=new RailYard(this,checkpoint);
@@ -57,7 +79,7 @@ class CityGame {
     this.tell('Sieppaa sininen pallo painovoima-aseella.');this.ui.save();
   }
   dash(){
-    if(!this.running||this.dashCooldown>0||this.encounter?.result)return;
+    if(this.metro||!this.running||this.dashCooldown>0||this.encounter?.result)return;
     let forward=this.walkForward,side=this.walkSide;
     if(Math.hypot(forward,side)<.1)forward=1;
     const length=Math.hypot(forward,side),co=Math.cos(this.angle),si=Math.sin(this.angle);
@@ -65,10 +87,14 @@ class CityGame {
     this.dashTime=.2;this.dashCooldown=2.25;this.ui.tone(135);
   }
   serialize(){
+    if(this.metro)return {stage:'metro',time:this.metro.time,elapsed:this.elapsed};
     if(this.encounter)return {stage:'terminal',yardCleared:true,checkpoint:this.encounter.checkpoint,elapsed:this.elapsed};
     if(this.yard)return this.yard.checkpoint();
     return {stage:'station',x:this.x,y:this.y,angle:this.angle,held:this.held,cells:this.cells,elapsed:this.elapsed}}
   restore(s) {
+    if(s?.stage==='metro'&&Number.isFinite(s.time)&&s.time>=0&&s.time<metroDuration&&Number.isFinite(s.elapsed)&&s.elapsed>=0){
+      this.reset();this.elapsed=s.elapsed;this.openMetro(s.time);return true;
+    }
     if(s?.stage==='yard'&&typeof s.armed==='boolean'&&Number.isInteger(s.wave)&&s.wave>=0&&s.wave<=3&&(s.armed||s.wave===0)&&Number.isFinite(s.elapsed)&&s.elapsed>=0){
       this.reset();this.elapsed=s.elapsed;this.openYard(s);return true;
     }
@@ -87,7 +113,7 @@ class CityGame {
   }
   get eye(){return 1.43-this.crouch*.59+this.lift}
   jump(){
-    if(this.running&&this.lift===0&&this.verticalSpeed===0)this.verticalSpeed=4.1;
+    if(!this.metro&&this.running&&this.lift===0&&this.verticalSpeed===0)this.verticalSpeed=4.1;
   }
   clearInput(){
     this.vx=0;this.vy=0;this.keys.clear();
@@ -106,13 +132,11 @@ class CityGame {
   }
   start(){
     this.running=true;this.ui.radio.resume();
-    if(!this.encounter&&!this.yard&&!this.storyStarted){
-      this.storyStarted=true;
-      if(!this.done)this.ui.radio.say('arrival','station');else this.ui.radio.say(this.done===1?'firstCell':'secondCell');
-    }
+    if(this.metro)this.metro.syncSound(true);
+    else if(!this.encounter&&!this.yard)this.startStationStory();
     this.clearInput();this.last=performance.now();this.simTimer=setInterval(()=>this.advance(performance.now()),1000/60);this.frameId=requestAnimationFrame(t=>this.frame(t));this.updateUI();
   }
-  stop(){this.running=false;clearInterval(this.simTimer);this.ui.radio.pause();cancelAnimationFrame(this.frameId);this.clearInput()}
+  stop(){this.running=false;this.metro?.pause();clearInterval(this.simTimer);this.ui.radio.pause();cancelAnimationFrame(this.frameId);this.clearInput()}
   tell(msg){this.ui.notice.textContent=msg;this.messageEnd=performance.now()+2800}
   distance(o){return Math.hypot(o.x-this.x,o.y-this.y)}
   visible(o){
@@ -121,7 +145,7 @@ class CityGame {
   }
   nearbyCell(){return this.cells.findIndex(c=>!c.inPlace&&this.distance(c)<3.4&&Math.cos(Math.atan2(c.y-this.y,c.x-this.x)-this.angle)>.88&&this.visible(c))}
   action(fire=false){
-    if(!this.running)return;
+    if(this.metro||!this.running)return;
     if(this.encounter){this.encounter.input();return}
     if(this.yard){this.yard.use(fire);return}
     if(this.done===2&&this.distance(this.exit)<1.8){this.openYard();return}
@@ -134,6 +158,14 @@ class CityGame {
   }
   updateUI(){
     const e=this.encounter;
+    this.ui.arena.classList.toggle('metro',!!this.metro);
+    this.ui.skipMetro.hidden=!this.metro;
+    if(this.metro){
+      this.ui.section.textContent='LUKU 0 · VIIMEINEN VUORO';
+      this.ui.mission.textContent='Katso ulos metrovaunun ikkunasta.';
+      this.ui.arena.classList.remove('hurt','yard','terminal');this.ui.bossHud.hidden=true;this.ui.warning.hidden=true;
+      return;
+    }
     this.ui.section.textContent=e?'LUKU 3/3 · TERMINAALI 00':this.yard?'LUKU 2/3 · RATAPIHA 09':'LUKU 1/3 · ASEMA-AUKIO';
     this.ui.arena.classList.toggle('yard',!!this.yard);
     this.ui.kind.textContent=this.yard?.armed?'PULSSIKIVÄÄRI':'PAINOVOIMA-ASE';
@@ -168,6 +200,7 @@ class CityGame {
   }
   step(dt,time){
     this.elapsed+=dt;
+    if(this.metro){this.metro.step(dt);return}
     // Keep a tap until the simulation has sampled it at least once.
     const down=code=>this.keys.has(code)||this.pressed.has(code);
     const key=(a,b)=>Number(down(a)||down(b));
@@ -213,6 +246,10 @@ class CityGame {
     if(!this.running)return;
     this.advance(time);
     if(!this.running)return;
+    if(this.metro){
+      this.metro.render();
+      this.frameId=requestAnimationFrame(t=>this.frame(t));return;
+    }
     this.scene.render(this,time);this.drawBearing();
     const dashLabel=this.dashCooldown>0?this.dashCooldown.toFixed(1)+' s':'VALMIS';
     if(this.ui.dash.textContent!==dashLabel)this.ui.dash.textContent=dashLabel;

@@ -5,7 +5,7 @@ const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fa
 const write=(key,value)=>{try{localStorage.setItem(key,JSON.stringify(value))}catch{}};
 const prefs=Object.assign({sound:true,volume:65,sensitivity:50},read('lambda.settings',{}));
 const radio=new CampaignRadio($('radio'),prefs);
-let game=null,view='',parentView='',previousFocus=null,inGame=false,audioCtx,master,drone,toastTimer,practice=false,footBuffer;
+let game=null,view='',parentView='',previousFocus=null,inGame=false,audioCtx,master,drone,toastTimer,practice=false,metroReplay=false,footBuffer;
 let progress=read('lambda.progress',null),drag=null,padPointer=null;
 function showScreenControls(show){
   arena.classList.toggle('screen-controls',show);
@@ -53,7 +53,7 @@ function footstep(){
   gain.gain.value=.105;source.connect(filter).connect(gain).connect(master);source.start();
 }
 function reflectSound(){const on=prefs.sound;$('soundIcon').setAttribute('href',on?'#sound':'#mute');$('soundName').textContent=on?'Äänet päällä':'Äänet pois';$('soundBtn').setAttribute('aria-pressed',String(on));$('soundBtn').setAttribute('aria-label',on?'Mykistä äänet':'Ota äänet käyttöön');if($('soundToggle')){$('soundToggle').textContent=on?'Päällä':'Pois';$('soundToggle').setAttribute('aria-pressed',String(on))}}
-function toggleSound(){prefs.sound=!prefs.sound;if(prefs.sound){soundInit();tone(240)}else if(master)master.gain.setTargetAtTime(0,audioCtx.currentTime,.025);radio.playClip();reflectSound();write('lambda.settings',prefs)}
+function toggleSound(){prefs.sound=!prefs.sound;if(prefs.sound){soundInit();tone(240)}else if(master)master.gain.setTargetAtTime(0,audioCtx.currentTime,.025);radio.playClip();game?.metro?.syncSound();reflectSound();write('lambda.settings',prefs)}
 function toast(text){$('toast').textContent=text;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').textContent='',3200)}
 function choice(id,title,sub,primary=false,icon=''){return '<button class="choice '+(primary?'primary':'')+'" id="'+id+'"><span><strong>'+title+'</strong><small>'+sub+'</small></span>'+icons(icon||'play')+'</button>'}
 function openPanel(name){
@@ -71,11 +71,11 @@ function renderPanel(){
   }else if(name==='settings'){
     heading='Asetukset';html='<div class="row"><span>Äänet</span><button id="soundToggle" class="toggle"></button></div><div class="row"><label for="volume">Äänenvoimakkuus<small id="volumeValue"></small></label><input id="volume" type="range" min="0" max="100" value="'+Number(prefs.volume)+'"></div><div class="row"><label for="sensitivity">Hiiren herkkyys<small id="sensValue"></small></label><input id="sensitivity" type="range" min="1" max="100" value="'+Number(prefs.sensitivity)+'"></div><p class="helpfooter">Asetukset tallentuvat tähän selaimeen.</p>';
   }else if(name==='pause'){
-    heading='Peli tauolla';html='<p class="fieldlabel">'+(game?.encounter?'TERMINAALI 00 · G-MAN':game?.yard?'RATAPIHA 09 · VASTARINTA':'CITY 17 · ASEMA-AUKIO')+'</p>'+choice('continue','Jatka peliä','Palaa käynnissä olevaan peliin',true)+choice('pauseControls','Ohjaimet','Liikkuminen, aseet ja vuorovaikutus',false,'keys')+choice('pauseSettings','Asetukset','Äänet ja hiiren herkkyys',false,'gear')+'<button id="toMenu" class="closealt">'+(practice?'Lopeta harjoittelu':'Tallenna ja palaa päävalikkoon')+'</button>';
-    if(!practice)html+='<button id="restartStory" class="closealt">Aloita kampanja alusta</button>';
+    heading='Peli tauolla';html='<p class="fieldlabel">'+(game?.metro?'LUKU 0 · VIIMEINEN VUORO':game?.encounter?'TERMINAALI 00 · G-MAN':game?.yard?'RATAPIHA 09 · VASTARINTA':'CITY 17 · ASEMA-AUKIO')+'</p>'+choice('continue','Jatka peliä','Palaa käynnissä olevaan peliin',true)+choice('pauseControls','Ohjaimet','Liikkuminen, aseet ja vuorovaikutus',false,'keys')+choice('pauseSettings','Asetukset','Äänet ja hiiren herkkyys',false,'gear')+'<button id="toMenu" class="closealt">'+(metroReplay?'Palaa päävalikkoon':practice?'Lopeta harjoittelu':'Tallenna ja palaa päävalikkoon')+'</button>';
+    if(!practice&&!metroReplay)html+='<button id="restartStory" class="closealt">Aloita kampanja alusta</button>';
   }else if(name==='restartStory'){
-    heading='Palataanko asemalle?';
-    html='<p class="helper">Uusi kampanja korvaa tämän selaimen tallennuksen. Tapaat junanlähettäjän ensimmäisellä laiturilla.</p>'+choice('newGame','Aloita alusta','Asema-aukio · Luku 1',true)+'<button id="cancelRestart" class="closealt">Takaisin taukovalikkoon</button>';
+    heading='Aloitetaanko metromatkasta?';
+    html='<p class="helper">Uusi kampanja korvaa tämän selaimen tallennuksen. Matka alkaa maanalaisessa metrovaunussa.</p>'+choice('newGame','Aloita alusta','Viimeinen vuoro · Luku 0',true)+'<button id="cancelRestart" class="closealt">Takaisin taukovalikkoon</button>';
   }else if(name==='defeat'){
     heading='Aika pysähtyi.';
     if(game.yard){
@@ -88,7 +88,7 @@ function renderPanel(){
   }else if(name==='winner'){
     heading='Aika liikkuu taas.';
     const seconds=Math.floor(game.elapsed);
-    html='<p class="fieldlabel">G-MAN KUKISTETTU</p><p class="helper">Viimeinen pallo rikkoo aikasilmukan. Salkku putoaa laiturille. Viimeinen juna ylittää vaihteen, ja junanlähettäjän lyhty sammuu.</p>'+row(practice?'Harjoitteluaika':'Kampanjan kesto',[Math.floor(seconds/60)+' min '+seconds%60+' s'])+choice('replay',practice?'Harjoittele uudelleen':'Uusi kampanja',practice?'Palaa ensimmäiseen vaiheeseen':'Palaa asema-aukiolle',true)+'<button id="toMenu" class="closealt">Päävalikkoon</button>';
+    html='<p class="fieldlabel">G-MAN KUKISTETTU</p><p class="helper">Viimeinen pallo rikkoo aikasilmukan. Salkku putoaa laiturille. Viimeinen juna ylittää vaihteen, ja junanlähettäjän lyhty sammuu.</p>'+row(practice?'Harjoitteluaika':'Kampanjan kesto',[Math.floor(seconds/60)+' min '+seconds%60+' s'])+choice('replay',practice?'Harjoittele uudelleen':'Uusi kampanja',practice?'Palaa ensimmäiseen vaiheeseen':'Palaa metroon',true)+'<button id="toMenu" class="closealt">Päävalikkoon</button>';
   }
   content.innerHTML='<h2 id="panelTitle" tabindex="-1">'+heading+'</h2>'+html;
   const bind=(id,fn)=>{if($(id))$(id).onclick=fn};
@@ -102,13 +102,14 @@ function renderPanel(){
   }
   $('panelTitle').focus({preventScroll:true});
 }
-function checkpoint(){if(practice||!game||game.completed)return;progress=game.serialize();write('lambda.progress',progress)}
+function checkpoint(){if(practice||metroReplay||!game||game.completed)return;progress=game.serialize();write('lambda.progress',progress)}
 function getGame(){
   if(!game)game=new CityGame($('world'),{
     radio,pulse,kind:$('weaponKind'),act:$('actBtn'),mission:$('mission'),weapon:$('weaponState'),interact:$('interaction'),notice:$('notice'),
     section:$('sectionName'),bossHud:$('bossHud'),bossBar:$('bossBar'),bossStage:$('bossStage'),
     vitals:$('vitals'),health:$('health'),healthBar:$('healthBar'),bearing:$('bearing'),dash:$('dashState'),
     phaseSplash:$('phaseSplash'),warning:$('hazardWarning'),aim:$('crosshair'),arena,
+    skipMetro:$('skipMetro'),replayFinished:()=>{if(!metroReplay)return false;mainMenu();return true},
     tone,footstep,allyPulse,save:checkpoint,finish:win,lose:defeat
   });
   return game;
@@ -119,14 +120,14 @@ function lock(){
 }
 function unlock(){if(document.pointerLockElement&&document.exitPointerLock)document.exitPointerLock()}
 function begin(mode='continue'){
-  practice=mode==='practice';
+  practice=mode==='practice';metroReplay=mode==='metroReplay';
   const g=getGame();g.reset();inGame=true;closePanel();home.hidden=true;arena.hidden=false;soundInit();
   if(practice)g.openTerminal();
-  else if(mode==='continue'&&progress)g.restore(progress);
+  else if(!(mode==='continue'&&progress&&g.restore(progress)))g.openMetro();
   g.start();$('world').focus();
   if(g.encounter)g.tell('Sieppaa lähestyvä pallo ja palauta se G-Maniin.');
   else if(g.yard)g.tell(g.yard.armed?'Seuraa ratapihan opastinta.':'Karo viittoo sinua lähemmäs.');
-  else g.tell(g.held>=0?'Vie kenno siniselle releelle.':g.done===2?'Kulje vihreälle portille.':(arena.classList.contains('screen-controls')?'Liiku vetämällä vasenta ohjainta.':'Liiku WASD-näppäimillä tai nuolilla.'));
+  else if(!g.metro)g.tell(g.held>=0?'Vie kenno siniselle releelle.':g.done===2?'Kulje vihreälle portille.':(arena.classList.contains('screen-controls')?'Liiku vetämällä vasenta ohjainta.':'Liiku WASD-näppäimillä tai nuolilla.'));
   checkpoint();
 }
 function retry(){
@@ -134,13 +135,15 @@ function retry(){
 }
 function defeat(){checkpoint();unlock();openPanel('defeat')}
 function updatePlayLabel(){
+  $('metroReplayBtn').hidden=!progress||progress.stage==='metro';
   $('playText').textContent=progress?'Jatka kampanjaa':'Aloita kampanja';
 }
 function pause(){if(!game?.running)return;game.stop();drag=null;releaseFire();releasePad();checkpoint();unlock();openPanel('pause')}
 function resume(){closePanel();game.start();$('world').focus();soundInit()}
-function mainMenu(){radio.clear();if(game?.running)game.stop();if(inGame&&!game.completed)checkpoint();inGame=false;unlock();arena.hidden=true;home.hidden=false;closePanel();practice=false;updatePlayLabel();$('playBtn').focus()}
+function mainMenu(){radio.clear();if(game?.running)game.stop();if(inGame&&!game.completed)checkpoint();game?.closeMetro();metroReplay=false;inGame=false;unlock();arena.hidden=true;home.hidden=false;closePanel();practice=false;updatePlayLabel();$('playBtn').focus()}
 function win(){if(!practice){progress=null;write('lambda.progress',null)}tone(540);unlock();openPanel('winner')}
-$('playBtn').onclick=()=>begin();$('practiceBtn').onclick=()=>begin('practice');$('originalBtn').onclick=()=>openPanel('original');$('settingsBtn').onclick=()=>{parentView='home';openPanel('settings')};$('controlsBtn').onclick=()=>{parentView='home';openPanel('controls')};$('soundBtn').onclick=toggleSound;$('closePanel').onclick=back;$('pauseBtn').onclick=pause;
+$('playBtn').onclick=()=>begin();$('metroReplayBtn').onclick=()=>begin('metroReplay');
+$('skipMetro').onclick=()=>{if(game?.running){game.finishMetro();if(inGame)$('world').focus({preventScroll:true})}};$('practiceBtn').onclick=()=>begin('practice');$('originalBtn').onclick=()=>openPanel('original');$('settingsBtn').onclick=()=>{parentView='home';openPanel('settings')};$('controlsBtn').onclick=()=>{parentView='home';openPanel('controls')};$('soundBtn').onclick=toggleSound;$('closePanel').onclick=back;$('pauseBtn').onclick=pause;
 panel.addEventListener('cancel',e=>{e.preventDefault();back()});
 panel.addEventListener('click',e=>{if(e.target!==panel)return;const r=panel.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)back()});
 $('fullBtn').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else if(document.documentElement.requestFullscreen)await document.documentElement.requestFullscreen();else toast('Selain ei tue koko näytön tilaa.')}catch{toast('Koko näytön tila ei ole käytettävissä tässä näkymässä.')}};
@@ -167,12 +170,12 @@ window.addEventListener('keydown',e=>{
     game.press(code);
     return;
   }
-  const nav=[...document.querySelectorAll('.navitem,#practiceBtn')],i=nav.indexOf(document.activeElement);
+  const nav=[...document.querySelectorAll('.navitem:not([hidden])')],i=nav.indexOf(document.activeElement);
   if(e.code==='ArrowDown'||e.code==='ArrowUp'){e.preventDefault();nav[(i<0?(e.code==='ArrowDown'?0:nav.length-1):(i+(e.code==='ArrowDown'?1:-1)+nav.length)%nav.length)].focus()}
   if(e.key==='Enter'&&document.activeElement===document.body){e.preventDefault();$('playBtn').click()}
 },true);
 window.addEventListener('keyup',e=>{if(game?.running)game.advance(performance.now());game?.keys.delete(gameKey(e))},true);
-function look(dx,dy){if(!game?.running)return;const sense=.00055+prefs.sensitivity*.00004;game.angle+=dx*sense;game.cameraPitch=Math.min(1.23,Math.max(-1.23,game.cameraPitch-dy*sense*.83))}
+function look(dx,dy){if(!game?.running)return;const sense=.00055+prefs.sensitivity*.00004;if(game.metro){game.metro.look(dx*sense,-dy*sense);return}game.angle+=dx*sense;game.cameraPitch=Math.min(1.23,Math.max(-1.23,game.cameraPitch-dy*sense*.83))}
 document.addEventListener('mousemove',e=>{if(document.pointerLockElement===$('world'))look(e.movementX,e.movementY)});
 let firePointer=null;
 function releaseFire(){
