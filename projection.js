@@ -2,6 +2,22 @@
 
 // Store model faces once. Project each visible plane independently so browsers
 // do not have to depth-sort an entire preserve-3d city on every footstep.
+// The actor's curved skin is made of vertical strips. Project each strip's
+// visible outline so a foreground barrier can hide just its feet or shoulder.
+function exposedStrip(face,mask){
+  const {w,h}=face,m=mask.model.multiply(face.m);
+  const top=-m.m42/UNIT,fall=m.m22/UNIT;
+  const edge=[];
+  for(let i=4;i>=0;i--){
+    const u=w*i/4;
+    const column={x:-(m.m43+u*m.m13)/UNIT,y:(m.m41+u*m.m11)/UNIT};
+    const horizon=yardHorizon(mask.eye,column,mask.boxes);
+    edge.push([u,Math.max(0,Math.min(h,(top-horizon)/fall))]);
+  }
+  if(edge.every(p=>p[1]>=h-.02))return null;
+  if(edge.every(p=>p[1]<=.02))return [];
+  return [[0,0],[w,0],...edge];
+}
 class SurfaceBatch{
   constructor(model,layer){
     this.layer=layer;this.faces=[];
@@ -12,7 +28,7 @@ class SurfaceBatch{
         if(node.classList.contains('mesh')){walk(node,matrix);continue}
         const w=parseFloat(node.style.width),h=parseFloat(node.style.height);
         const ground=node.matches('.street-floor,.terminal-floor')?1000:node.matches('.track-bed')?1100:
-          node.matches('.rail,.rail-amber')?1200:node.matches('.contact-shadow,.ground-fx')?1300:0;
+          node.matches('.rail,.rail-amber')?1200:node.matches('.contact-shadow,.ground-fx')?1300:node.matches('.pulse-streak')?210000:0;
         this.faces.push({node,w,h,ground,m:matrix.translate(-w/2,-h/2),out:null,uv:null});
       }
     };
@@ -20,7 +36,7 @@ class SurfaceBatch{
   }
   dispose(){for(const face of this.faces)face.out?.remove()}
   hide(){for(const face of this.faces)if(face.out&&!face.out.hidden)face.out.hidden=true}
-  draw(view,focal,cx,cy){
+  draw(view,focal,cx,cy,mask=null,opacity=1){
     const near=6,fx=cx/focal,fy=cy/focal;
     for(const face of this.faces){
       const {node,w,h}=face,m=view.multiply(face.m);
@@ -33,6 +49,15 @@ class SurfaceBatch{
         visible=!verts.every(p=>p[4]>-near)&&!verts.every(p=>p[2]<fx*p[4])&&!verts.every(p=>p[2]>-fx*p[4])&&
           !verts.every(p=>p[3]<fy*p[4])&&!verts.every(p=>p[3]>-fy*p[4]);
       }
+      let masked=false;
+      if(visible&&mask?.boxes.length&&node.classList.contains('actor-skin')){
+        const outline=exposedStrip(face,mask);
+        if(outline){
+          masked=true;visible=outline.length>0;
+          verts=outline.map(([u,v])=>[u,v,x+u*ax+v*bx,y+u*ay+v*by,z+u*az+v*bz]);
+          if(visible)visible=!verts.every(p=>p[4]>-near);
+        }
+      }
       if(!visible){if(face.out&&!face.out.hidden)face.out.hidden=true;continue}
       if(!face.out){
         face.out=node.cloneNode(true);
@@ -43,8 +68,8 @@ class SurfaceBatch{
       const crossing=verts.some(p=>p[4]>-near);
       if(crossing){
         const clipped=[];
-        for(let i=0;i<4;i++){
-          const a=verts[i],b=verts[(i+1)%4],inside=a[4]<=-near;
+        for(let i=0;i<verts.length;i++){
+          const a=verts[i],b=verts[(i+1)%verts.length],inside=a[4]<=-near;
           if(inside)clipped.push(a);
           if(inside!==(b[4]<=-near)){
             const t=(-near-a[4])/(b[4]-a[4]);
@@ -52,9 +77,12 @@ class SurfaceBatch{
           }
         }
         verts=clipped;
+      }
+      if(masked||crossing){
         out.style.clipPath='polygon('+verts.map(p=>p[0].toFixed(2)+'px '+p[1].toFixed(2)+'px').join(',')+')';
       }else if(face.crossing)out.style.clipPath=node.style.clipPath;
-      face.crossing=crossing;
+      face.crossing=crossing||masked;
+      if(face.opacity!==opacity){out.style.opacity=opacity===1?'':String(opacity);face.opacity=opacity}
       if(face.uv!==node.style.backgroundPosition){face.uv=node.style.backgroundPosition;out.style.backgroundPosition=face.uv}
       // CSS applies this homography to the original texture, including its UVs.
       // All output lives on the screen plane. Ordering depends on camera depth.

@@ -35,12 +35,14 @@ function architecture(root,map,stage){
         }
         const [mat,h]=tileSurface(t,stage),cx=dx?line+.5+dx*.5:(at+end)/2,cy=dx?(at+end)/2:line+.5+dy*.5;
         // Short spans also clip correctly when the camera crosses a wall endpoint.
-        for(let u=at;u<end;u+=3){
-          const span=Math.min(3,end-u),center=u+span/2;
+        const panelWidth=t>=5?1:3;
+        for(let u=at;u<end;u+=panelWidth){
+          const span=Math.min(panelWidth,end-u),center=u+span/2;
           const fx=dx?cx:center,fy=dx?center:cy;
           for(let z=0;z<h;z+=2.8){
             const band=Math.min(2.8,h-z);
             const panel=face3(root,fy,z+band/2,-fx,span+.004,band+.004,'rotateY('+rotation+'deg)',mat,dy<0?.18:dx>0?.12:.03);
+            if(t===5)panel.classList.add('yard-divider');
             panel.style.backgroundPosition='0 0,'+px(-u)+' '+px(z+band-h);
           }
         }
@@ -133,12 +135,12 @@ function prop3(root,type){
     const face=face3(root,0,1.25,0,2.2,2.2,'','clock-face');face.innerHTML='<i></i><b></b>';
   }else if(type==='case'){
     box3(root,0,.2,0,.46,.34,.14,'leather');
-  }else if(['rift','realHalo','orb','returnOrb'].includes(type)){
+  }else if(['rift','realHalo','orb','returnOrb','concreteDust','metalSpark'].includes(type)){
     face3(root,0,.5,0,1,1,'',type+' field');
   }else if(type==='ring'||type==='trap'){
     floorMark(root,0,0,2,2,type+' ground-fx',.035);
-  }else if(type==='tracer'){
-    box3(root,0,0,.5,.022,.022,1,'pulse-light');
+  }else if(type==='tracer'||type==='pulseTrace'){
+    box3(root,0,0,.5,.014,.014,1,type==='pulseTrace'?'pulse-streak':'pulse-light');
   }
   return null;
 }
@@ -173,7 +175,7 @@ class CityScene{
     if(g.yard){
       const y=g.yard;
       return [...y.sprites().filter(o=>!yardProps.includes(o)),...y.rings.map(r=>({...r,type:'ring',size:r.radius})),
-        ...y.flashes.map(v=>({type:'tracer',x:v.from.x,y:v.from.y,z:v.from.z,to:v.to}))];
+        ...y.flashes.map(v=>({type:v.player?'pulseTrace':'tracer',x:v.from.x,y:v.from.y,z:v.from.z,to:v.to}))];
     }
     return [g.spirit,g.station,{...g.exit,type:g.done===2?'exitOpen':'exit'},
       ...g.cells.filter((c,i)=>!c.inPlace&&i!==g.held),
@@ -202,17 +204,29 @@ class CityScene{
       if(instance.rig){
         const facing=o.facing??Math.PI;
         rotation=Math.PI-facing;scale='scale3d('+Array(3).fill((o.height||1.78)/1.78).join(',')+')';rotation+=instance.rig.update(o,g);
-      }else if(['rift','realHalo','orb','returnOrb','clock'].includes(type)){
+      }else if(['rift','realHalo','orb','returnOrb','concreteDust','metalSpark','clock'].includes(type)){
         rotation=Math.atan2(g.y-o.y,o.x-g.x);
         if(type!=='clock')scale='scale3d('+((o.height||1)*(o.aspect||1))+','+(o.height||1)+',1)';
       }else if(type==='ring'||type==='trap')scale='scale3d('+Math.max(.01,o.size)+',1,'+Math.max(.01,o.size)+')';
-      else if(type==='tracer'){
+      else if(type==='tracer'||type==='pulseTrace'){
         const dx=o.to.x-o.x,dy=o.to.y-o.y,dz=o.to.z-height,d=Math.hypot(dx,dy);
-        rotation=Math.atan2(dy,-dx);scale='rotateX('+(-Math.atan2(dz,d))+'rad) scaleZ('+Math.hypot(d,dz)+')';
+        rotation=Math.atan2(dy,-dx);scale='rotateX('+Math.atan2(dz,d)+'rad) scaleZ('+Math.hypot(d,dz)+')';
       }else if(type==='exit'||type==='exitOpen')rotation=g.yard?0:-Math.PI/2;
       const transform=place3(o.x,o.y,height)+' rotateY('+rotation+'rad) '+scale;
-      const drawKey=viewKey+transform+(o.pose??'')+(o.flash>0)+(o.stomp??'')+(o.firing??'')+(o.armed??'');
-      if(instance.lastDraw!==drawKey){instance.batch.draw(view.multiply(new DOMMatrix(transform)),focal,w/2,h/2);instance.lastDraw=drawKey}
+      const drawKey=viewKey+transform+(o.pose??'')+(o.flash>0)+(o.stomp??'')+(o.firing??'')+(o.armed??'')+(o.alpha??1);
+      if(instance.lastDraw!==drawKey){
+        const model=new DOMMatrix(transform);
+        let mask=null;
+        if(g.yard&&instance.rig){
+          const r=o.height*.6;
+          const boxes=yardCover.filter(([x,y,width,height])=>
+            x<=Math.max(g.x,o.x+r)&&x+width>=Math.min(g.x,o.x-r)&&
+            y<=Math.max(g.y,o.y+r)&&y+height>=Math.min(g.y,o.y-r));
+          mask={model,boxes,eye:{x:g.x,y:g.y,z:g.eye+bob+shake}};
+        }
+        instance.batch.draw(view.multiply(model),focal,w/2,h/2,mask,o.alpha??1);
+        instance.lastDraw=drawKey;
+      }
     }
     for(const [key,obj] of this.instances)if(!present.has(key)){obj.batch.dispose();obj.root.remove();this.instances.delete(key)}
     const weapon=g.yard?.armed?'pulse':'gravity';

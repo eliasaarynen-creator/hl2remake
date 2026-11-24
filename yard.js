@@ -1,15 +1,60 @@
 'use strict';
 
 const coverHeight={5:1.28,6:2.68};
+const yardCover=[
+  [8,6,2,1,5],[9,13,3,1,5],[13,3,4,2,6],[14,9,1,3,5],[18,14,4,2,6],
+  [21,6,2,1,5],[23,11,1,3,5],[5,16,3,1,6],[25,3,3,1,6],
+  [0,0,32,1,4],[0,19,32,1,4],[0,1,1,18,4],[31,1,1,18,4],
+  [1,1,3,1,3],[28,1,3,1,3],[1,18,3,1,3],[28,18,3,1,3]
+];
 const yardMap=(()=>{
-  const tiles=Array.from({length:20},(_,y)=>Array.from({length:32},(_,x)=>
-    y===0||x===0||x===31||y===19?'4':(y===1||y===18)&&(x<4||x>27)?'3':'0'));
-  // Concrete dividers across the sidings, and full-height freight containers.
-  const blocks=[[8,6,2,1,5],[9,13,3,1,5],[13,3,4,2,6],[14,9,1,3,5],
-    [18,14,4,2,6],[21,6,2,1,5],[23,11,1,3,5],[5,16,3,1,6],[25,3,3,1,6]];
-  for(const [x,y,w,h,type] of blocks)for(let j=0;j<h;j++)for(let i=0;i<w;i++)tiles[y+j][x+i]=String(type);
+  const tiles=Array.from({length:20},()=>Array(32).fill('0'));
+  for(const [x,y,w,h,type] of yardCover)for(let j=0;j<h;j++)for(let i=0;i<w;i++)tiles[y+j][x+i]=String(type);
   return tiles.map(row=>row.join(''));
 })();
+// Return the time interval spent inside a rectangle along a horizontal segment.
+function coverInterval(a,b,box){
+  const [x,y,w,h]=box,dx=b.x-a.x,dy=b.y-a.y;
+  let enter=0,leave=1;
+  if(dx){
+    const t0=(x-a.x)/dx,t1=(x+w-a.x)/dx;
+    enter=Math.max(enter,Math.min(t0,t1));leave=Math.min(leave,Math.max(t0,t1));
+  }else if(a.x<x||a.x>x+w)return null;
+  if(dy){
+    const t0=(y-a.y)/dy,t1=(y+h-a.y)/dy;
+    enter=Math.max(enter,Math.min(t0,t1));leave=Math.min(leave,Math.max(t0,t1));
+  }else if(a.y<y||a.y>y+h)return null;
+  return enter<=leave?[enter,leave]:null;
+}
+function yardContact(a,b){
+  const dz=b.z-a.z;
+  let first=dz<0&&b.z<=0?{t:-a.z/dz,tile:0}:null;
+  for(const box of yardCover){
+    const span=coverInterval(a,b,box);
+    if(!span)continue;
+    const tile=box[4],roof=coverHeight[tile]??3.8;
+    let t=span[0];
+    if(a.z+t*dz>roof){
+      if(dz>=0)continue;
+      t=(roof-a.z)/dz;
+      if(t>span[1])continue;
+    }
+    if(!first||t<first.t)first={t,tile};
+  }
+  return first;
+}
+// At a single silhouette column, which world height just clears every obstacle?
+function yardHorizon(eye,column,boxes=yardCover){
+  let horizon=0;
+  for(const box of boxes){
+    const span=coverInterval(eye,column,box);
+    if(!span||span[1]<=0)continue;
+    const roof=coverHeight[box[4]]??3.8;
+    const edge=roof>eye.z?span[0]:span[1];
+    horizon=Math.max(horizon,eye.z+(roof-eye.z)/Math.max(.000001,edge));
+  }
+  return horizon;
+}
 const rebels=[
   {x:6.05,y:9.46,type:'kajo',height:1.72,aspect:.64},
   {x:6.13,y:11.10,type:'saro',height:1.7,aspect:.49}
@@ -64,33 +109,54 @@ class RailYard {
     if(this.armed&&fire)this.fire();
   }
   sight(a,b,fromZ=.83,toZ=.83){
-    const n=Math.max(1,Math.ceil(distanceBetween(a,b)*8));
-    for(let i=1;i<n;i++){
-      const t=i/n,tile=this.game.value(a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t);
-      if(tile&&(coverHeight[tile]??4)>fromZ+(toZ-fromZ)*t)return false;
-    }
-    return true;
+    return !yardContact({x:a.x,y:a.y,z:fromZ},{x:b.x,y:b.y,z:toZ});
   }
-  target(){
-    const g=this.game;
-    const co=Math.cos(g.angle),si=Math.sin(g.angle);let best=null,nearest=Infinity;
+  shot(){
+    const g=this.game,co=Math.cos(g.angle),si=Math.sin(g.angle),rise=Math.tan(g.cameraPitch);
+    const point=d=>({x:g.x+d*co,y:g.y+d*si,z:g.eye+d*rise});
+    const range=48,wall=yardContact(point(0),point(range));
+    let depth=wall?range*wall.t:range,enemy=null;
     for(const e of this.enemies){
-      const dx=e.x-g.x,dy=e.y-g.y,depth=dx*co+dy*si,side=Math.abs(dy*co-dx*si);
-      if(depth<=0||depth>=nearest||side>e.width*.5+.035+depth*.007)continue;
-      const z=g.eye+Math.tan(g.cameraPitch)*depth;
-      if(z<-.06||z>e.height+.06||!this.sight(g,e,g.eye,Math.min(e.height,z)))continue;
-      best=e;nearest=depth;
+      const dx=e.x-g.x,dy=e.y-g.y,along=dx*co+dy*si,side=dy*co-dx*si;
+      const radius=e.width*.5,disc=radius*radius-side*side;
+      if(disc<0)continue;
+      const half=Math.sqrt(disc);
+      let enter=Math.max(0,along-half),exit=along+half;
+      if(rise){
+        const feet=(-g.eye)/rise,head=(e.height-g.eye)/rise;
+        enter=Math.max(enter,Math.min(feet,head));exit=Math.min(exit,Math.max(feet,head));
+      }else if(g.eye>e.height||g.eye<0)continue;
+      if(enter<=exit&&enter<depth){depth=enter;enemy=e}
     }
-    return best;
+    return {enemy,point:point(depth),tile:enemy?null:wall?.tile};
   }
+  target(){return this.enemies.length?this.shot().enemy:null}
   fire(){
     if(!this.armed||this.over||this.cooldown>0)return;
-    const g=this.game,hit=this.target();this.cooldown=.155;g.beam=1;g.ui.pulse();
-    if(hit){this.hit=.16;this.damage(hit,1)}
+    const g=this.game,{enemy,point,tile}=this.shot();
+    this.cooldown=.155;g.beam=1;g.ui.pulse();
+    const co=Math.cos(g.angle),si=Math.sin(g.angle);
+    const pitch=g.cameraPitch,forward=1.34*Math.cos(pitch)+.25*Math.sin(pitch);
+    const from={x:g.x+co*forward-si*.15,y:g.y+si*forward+co*.15,
+      z:g.eye+1.34*Math.sin(pitch)-.25*Math.cos(pitch)};
+    if((point.x-from.x)*co+(point.y-from.y)*si>0){
+      // Lift the visible streak over a parapet when the sight clears its top.
+      const stop=yardContact(from,point);
+      if(stop&&stop.t<.9999)from.z=g.eye+forward*Math.tan(pitch);
+      const origin={x:g.x,y:g.y,z:g.eye},raisedStop=yardContact(from,point);
+      if(!yardContact(origin,from)&&(!raisedStop||raisedStop.t>=.9999))
+        this.flashes.push({from,to:point,age:0,player:true});
+    }
+    if(enemy){this.hit=.16;this.damage(enemy,1,point)}
+    else if(tile!==undefined){
+      const dust=tile!==6;
+      this.sparks.push({x:point.x-co*.028,y:point.y-si*.028,z:Math.max(.035,point.z-.028*Math.tan(g.cameraPitch)),
+        type:dust?'concreteDust':'metalSpark',age:0});
+    }
   }
-  damage(e,amount){
+  damage(e,amount,point){
     e.hp-=amount;e.flash=.11;
-    this.sparks.push({x:e.x,y:e.y,z:e.height*.56,age:0,down:e.hp<=0});
+    this.sparks.push({...(point||{x:e.x,y:e.y,z:e.height*.56}),age:0,down:e.hp<=0});
     if(e.hp>0)return;
     this.enemies=this.enemies.filter(other=>other!==e);
     if(!this.enemies.length){
@@ -205,7 +271,7 @@ class RailYard {
     const g=this.game;
     for(const b of this.bolts){
       const old={x:b.x,y:b.y},oldZ=b.z;b.x+=b.vx*dt;b.y+=b.vy*dt;b.z+=b.vz*dt;b.age+=dt;
-      if(!this.sight(old,b,oldZ,b.z)||g.value(b.x,b.y)){b.age=9;continue}
+      if(!this.sight(old,b,oldZ,b.z)){b.age=9;continue}
       if(closestOnSegment(old,b,g)<.32&&b.z>g.lift+.06&&b.z<g.eye+.17){b.age=9;this.hurt(6)}
     }
     this.bolts=this.bolts.filter(b=>b.age<3.8);
@@ -217,7 +283,7 @@ class RailYard {
     }
     this.rings=this.rings.filter(r=>r.radius<7.6);
     for(const s of [...this.sparks,...this.flashes])s.age+=dt;
-    this.sparks=this.sparks.filter(s=>s.age<.3);this.flashes=this.flashes.filter(s=>s.age<.14);
+    this.sparks=this.sparks.filter(s=>s.age<.3);this.flashes=this.flashes.filter(s=>s.age<(s.player?.085:.14));
   }
   update(dt){
     if(this.over)return;
@@ -236,7 +302,8 @@ class RailYard {
     if(!this.armed)items.push({x:6.04,y:10.79,z:.81,height:.33,aspect:2.8,type:'riflePickup'});
     for(const e of this.enemies)items.push({...e,type:e.kind,aspect:e.width/e.height,armed:true,firing:e.glow>0});
     for(const b of this.bolts)items.push({...b,z:b.z-.09,type:'returnOrb',height:.18,aspect:1});
-    for(const s of this.sparks){const size=(s.down?.48:.13)+s.age*1.6;items.push({...s,z:s.z-size*.5,height:size,aspect:1,type:'orb',alpha:1-s.age/.31})}
+    for(const s of this.sparks){const size=(s.down?.48:.13)+s.age*(s.type==='concreteDust'?1.35:.85);
+      items.push({...s,z:s.z-size*.5+(s.type==='concreteDust'?s.age*.32:0),height:size,aspect:1,type:s.type||'orb',alpha:1-s.age/.3})}
     return items;
   }
 }
