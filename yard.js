@@ -72,14 +72,13 @@ class RailYard {
     return true;
   }
   target(){
-    const g=this.game,ratio=g.canvas.clientWidth/Math.max(1,g.canvas.clientHeight);
-    const vertical=2*Math.min(1.1,Math.max(.48,ratio*.44))/Math.max(.1,ratio);
+    const g=this.game;
     const co=Math.cos(g.angle),si=Math.sin(g.angle);let best=null,nearest=Infinity;
     for(const e of this.enemies){
       const dx=e.x-g.x,dy=e.y-g.y,depth=dx*co+dy*si,side=Math.abs(dy*co-dx*si);
       if(depth<=0||depth>=nearest||side>e.width*.5+.035+depth*.007)continue;
-      const z=.83+g.cameraPitch*depth*vertical;
-      if(z<-.06||z>e.height+.06||!this.sight(g,e,.83,Math.min(e.height,z)))continue;
+      const z=g.eye+Math.tan(g.cameraPitch)*depth;
+      if(z<-.06||z>e.height+.06||!this.sight(g,e,g.eye,Math.min(e.height,z)))continue;
       best=e;nearest=depth;
     }
     return best;
@@ -175,11 +174,11 @@ class RailYard {
         e.wind=Math.max(0,e.wind-dt);
         if(!e.wind){
           const dx=e.charge.x-e.x,dy=e.charge.y-e.y,n=Math.hypot(dx,dy)||1;
-          this.bolts.push({x:e.x,y:e.y,z:1.06,vx:dx/n*8.2,vy:dy/n*8.2,vz:(.83-1.06)/Math.max(.15,n/8.2),age:0});
+          this.bolts.push({x:e.x,y:e.y,z:1.06,vx:dx/n*8.2,vy:dy/n*8.2,vz:(e.charge.z-1.06)/Math.max(.15,n/8.2),age:0});
           e.charge=null;e.glow=.16;e.shot=4.3+(e.pose*2);
         }return;
       }
-      if(d<13.5&&e.shot<=0&&this.sight(e,g,1.06,.83)){e.wind=.78;e.charge={x:g.x,y:g.y};return}
+      if(d<13.5&&e.shot<=0&&this.sight(e,g,1.06,g.eye*.78)){e.wind=.78;e.charge={x:g.x,y:g.y,z:g.eye*.78};return}
     }
     if(d>(giant?1.15:2.7)||!this.sight(e,g,.5,.5))this.advance(e,dt);
     if(d<(giant?1.45:.86)&&this.sight(e,g,.6,.6))this.hurt(giant?15:6);
@@ -207,13 +206,13 @@ class RailYard {
     for(const b of this.bolts){
       const old={x:b.x,y:b.y},oldZ=b.z;b.x+=b.vx*dt;b.y+=b.vy*dt;b.z+=b.vz*dt;b.age+=dt;
       if(!this.sight(old,b,oldZ,b.z)||g.value(b.x,b.y)){b.age=9;continue}
-      if(closestOnSegment(old,b,g)<.32&&b.z>.1&&b.z<1.6){b.age=9;this.hurt(6)}
+      if(closestOnSegment(old,b,g)<.32&&b.z>g.lift+.06&&b.z<g.eye+.17){b.age=9;this.hurt(6)}
     }
     this.bolts=this.bolts.filter(b=>b.age<3.8);
     for(const ring of this.rings){
       const previous=ring.radius;ring.age+=dt;ring.radius=ring.age*5.6;const d=g.distance(ring);
       if(!ring.hit&&d>=previous-.35&&d<=ring.radius+.35&&d<7.5){
-        ring.hit=true;if(this.sight(ring,g,.17,.17)){this.shake=.58;this.hurt(25)}
+        ring.hit=true;if(g.lift<.3&&this.sight(ring,g,.17,.17)){this.shake=.58;this.hurt(25)}
       }
     }
     this.rings=this.rings.filter(r=>r.radius<7.6);

@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#101416"><title>Half-Life 2 · Aikakatkos</title>
 <meta name="description" content="Pelaa Aikakatkos-fanikampanjaa. Avaa portti City 17:ssä ja kohtaa G-Man kolmivaiheisessa pomotaistelussa.">
-<link rel="icon" href="assets/lambda.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=5dfdf7d9f5">
+<link rel="icon" href="assets/lambda.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=3c04a31296">
 <link rel="preload" as="image" href="assets/city17.webp">
 </head>
 <body>
@@ -24,36 +24,42 @@
 <symbol id="pause" viewBox="0 0 24 24"><path d="M8 5v14m8-14v14" stroke-width="3"/></symbol>
 </defs></svg>
 <main id="home">
-<div class="backdrop"></div><div class="shade"></div><div class="film"></div>
-<header class="top"><div class="brand"><svg><use href="#lambda"/></svg><b>LAMBDA</b><span class="brand-divider"></span><span class="brand-sub">TERMINAALI</span></div>
-<div class="tools"><button class="soundtool" id="soundBtn" aria-pressed="false"><svg class="icon"><use id="soundIcon" href="#mute"/></svg><span id="soundName">Äänet pois</span></button><button class="fulltool" id="fullBtn" aria-label="Koko näyttö" title="Koko näyttö"><svg class="icon"><use id="fullIcon" href="#full"/></svg></button></div></header>
-<section class="hero" aria-label="Päävalikko"><div class="menu"><div class="eyebrow"><i></i>CITY 17 <span class="slash">//</span> FANIKAMPANJA</div>
-<h1 aria-label="Half-Life 2"><span aria-hidden="true" class="wordmark">H<span class="brandA">Λ</span>LF-LIFE</span><sup aria-hidden="true">2</sup></h1>
-<h2 class="campaignTitle">Aikakatkos</h2><p class="intro">Asemalla kaikuu kuulutus junasta, joka ei koskaan lähtenyt.<br>Seuraa ääntä ratapihan kautta G-Manin luo.</p>
+<div class="backdrop" aria-hidden="true"></div><div class="shade" aria-hidden="true"></div>
+<section class="main-menu" aria-label="Päävalikko">
+<h1 aria-label="Half-Life 2"><span aria-hidden="true">HΛLF-LIFE</span><sup aria-hidden="true">2</sup></h1>
+<h2>Aikakatkos</h2>
 <nav aria-label="Pelivalikko">
-<button class="start navitem" id="playBtn"><svg class="icon"><use href="#play"/></svg><span id="playText">Aloita kampanja</span><span class="enter-tag">ENTER <svg><use href="#enter"/></svg></span></button>
-<button class="subitem navitem" id="controlsBtn"><svg class="icon"><use href="#keys"/></svg>Ohjaimet</button>
-<button class="subitem navitem" id="settingsBtn"><svg class="icon"><use href="#gear"/></svg>Asetukset</button>
-<button class="original-link navitem" id="originalBtn">Alkuperäinen Half-Life 2</button></nav></div>
-<aside class="casefile campaignRoute" aria-label="Kampanjan eteneminen">
-<div class="file-intro"><span class="micro">KAMPANJAN REITTI</span><span class="record-mark" aria-hidden="true"></span></div>
-<ol class="route"><li aria-current="step"><img src="assets/soul.webp" alt=""><div><small>LUKU 01</small><strong>Asema-aukio</strong></div></li>
-<li><div class="duo"><img src="assets/kajo.webp" alt=""><img src="assets/saro.webp" alt=""></div><div><small>LUKU 02</small><strong>Ratapiha 09</strong><span>Karo ja Särö</span></div></li>
-<li><img src="assets/gman.svg" alt=""><div><small>LUKU 03</small><strong>G-Man</strong></div></li></ol>
-<button id="practiceBtn"><svg class="icon"><use href="#target"/></svg>Harjoittele G-Mania</button></aside></section>
-<footer><div class="hints"><span><kbd>↑</kbd><kbd>↓</kbd> Navigoi</span><span><kbd>↵</kbd> Valitse</span></div><span class="edition"><i></i> EPÄVIRALLINEN FANIPROJEKTI</span></footer>
+<button class="navitem" id="playBtn"><span id="playText">Aloita kampanja</span></button>
+<button class="navitem" id="practiceBtn">Harjoittele G-Mania</button>
+<button class="navitem" id="controlsBtn">Ohjaimet</button>
+<button class="navitem" id="settingsBtn">Asetukset</button>
+<button class="navitem original-link" id="originalBtn">Alkuperäinen Half-Life 2</button>
+</nav>
+</section>
+<div class="menu-tools"><button id="soundBtn" aria-pressed="true"><svg class="icon"><use id="soundIcon" href="#sound"/></svg><span id="soundName">Äänet päällä</span></button><button id="fullBtn" aria-label="Koko näyttö"><svg class="icon"><use id="fullIcon" href="#full"/></svg></button></div>
 </main>
 <section id="arena" hidden aria-label="City 17:n fanitehtävä">
-<canvas id="world" tabindex="0" aria-label="Pelikenttä. Liiku WASD-näppäimillä ja käänny nuolilla."></canvas>
+<div id="world" role="application" tabindex="0" aria-label="Pelikenttä. Liiku WASD-näppäimillä tai nuolilla."><div id="camera" aria-hidden="true"></div></div>
+<div id="viewmodel" aria-hidden="true"><div id="weaponRig"></div></div>
+<svg id="radar" viewBox="0 0 32 20" aria-label="Kampanjan pienoiskartta"></svg>
 <div class="game-header"><div class="objective"><b id="sectionName">ASEMA-AUKIO</b><span id="mission"></span></div><div class="game-tools"><button id="padToggle" aria-pressed="false" aria-controls="pad">Ruutuohjain</button><button id="pauseBtn" class="iconButton" aria-label="Tauko"><svg class="icon"><use href="#pause"/></svg></button></div></div>
 <div id="bossHud" hidden><div><b>G-MAN</b><span id="bossStage"></span></div><progress id="bossBar" value="6" max="6" aria-label="G-Manin jäljellä oleva voima"></progress></div>
 <div id="bearing"></div><div id="phaseSplash" hidden></div><div id="hazardWarning" role="status" hidden>AIKAREPEÄMÄ · VÄISTÄ</div><div id="crosshair"></div><div id="notice" role="status"></div><div class="hud"><span class="hudLabel" id="weaponKind">PAINOVOIMA-ASE</span><b id="weaponState">VALMIS</b><span class="dash-line">SYÖKSY <span id="dashState">VALMIS</span></span></div>
 <div id="vitals" hidden><div><span>HEV · KUNTO</span><b id="health">100 %</b></div><progress id="healthBar" max="100" value="100" aria-label="Pelaajan kunto"></progress></div>
 <aside id="radio" aria-live="polite" aria-atomic="true" hidden><i aria-hidden="true"></i><div><small></small><b></b><p></p></div></aside>
 <div id="interaction"></div>
-<div class="touch-set"><div id="pad" aria-label="Liikkumisohjain"><div id="stick"></div></div><button id="dashBtn" aria-label="Syöksy">Syöksy</button><button id="actBtn" aria-label="Käytä painovoima-asetta">λ</button></div>
+<div class="touch-set"><div id="pad" aria-label="Liikkumisohjain"><div id="stick"></div></div><button id="jumpBtn" aria-label="Hyppää">Hyppy</button><button id="dashBtn" aria-label="Syöksy">Syöksy</button><button id="actBtn" aria-label="Käytä painovoima-asetta">λ</button></div>
 </section>
-<dialog id="panel" aria-labelledby="panelTitle"><div class="dialog-top"><span class="dialog-brand"><svg><use href="#lambda"/></svg> LAMBDA TERMINAALI</span><button id="closePanel" aria-label="Sulje"><svg class="icon"><use href="#close"/></svg></button></div><div id="panelContent"></div></dialog>
+<dialog id="panel" aria-labelledby="panelTitle"><div class="dialog-top"><span class="dialog-brand"><svg><use href="#lambda"/></svg> AIKAKATKOS</span><button id="closePanel" aria-label="Sulje"><svg class="icon"><use href="#close"/></svg></button></div><div id="panelContent"></div></dialog>
 <div id="toast" role="status"></div>
-<script src="radio-clips.js?v=98f3e893ba" defer></script><script src="story.js?v=5b1dea20b5" defer></script><script src="yard.js?v=92f0695605" defer></script><script src="yard-art.js?v=e847a64168" defer></script><script src="yard-scene.js?v=b453307b3d" defer></script><script src="actors.js?v=7a9fbcbd1b" defer></script><script src="story-models.js?v=c8bee28f61" defer></script><script src="weapon-models.js?v=bd6c1002f2" defer></script><script src="encounter.js?v=8c5a755215" defer></script><script src="art.js?v=04d6ab3fa1" defer></script><script src="game.js?v=ef9bb0f883" defer></script><script src="app.js?v=0f0eb351f9" defer></script>
+<script src="radio-clips.js?v=98f3e893ba" defer></script>
+<script src="story.js?v=5b1dea20b5" defer></script>
+<script src="yard.js?v=eb1eecf458" defer></script>
+<script src="encounter.js?v=c5467e9455" defer></script>
+<script src="geometry.js?v=a5c38f99fc" defer></script>
+<script src="models.js?v=cd03b25126" defer></script>
+<script src="projection.js?v=53d2cb7a6c" defer></script>
+<script src="scene.js?v=6829160159" defer></script>
+<script src="game.js?v=35ed847a43" defer></script>
+<script src="app.js?v=cce0a85348" defer></script>
 </body></html>

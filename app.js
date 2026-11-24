@@ -67,7 +67,7 @@ function renderPanel(){
   if(name==='original'){
     heading='Half-Life 2';html='<p class="helper">Pelaa alkuperäistä kampanjaa selaimella. Avaa GeForce NOW, kirjaudu sisään ja hae peli nimellä Half-Life 2. Tarvitset pelin Steam-kirjastoosi.</p><a class="choice primary" href="https://play.geforcenow.com/" target="_blank" rel="noopener"><span><strong>Avaa GeForce NOW</strong><small>Pilvipeli · Avautuu uuteen välilehteen</small></span>'+icons('play')+'</a><a class="choice" href="steam://rungameid/220"><span><strong>Käynnistä Steamissa</strong><small>Avaa tietokoneelle asennettu peli</small></span>'+icons('play')+'</a><a class="textlink" href="https://store.steampowered.com/app/220/HalfLife_2/" target="_blank" rel="noopener">Half-Life 2 Steam-kaupassa</a>';
   }else if(name==='controls'){
-    heading='Ohjaimet';html='<p class="fieldlabel">CITY 17 · FANITEHTÄVÄ</p>'+row('Liiku',['W','A','S','D'])+row('Eteen ja taakse',['↑','↓'])+row('Katso ympärillesi',['Hiiri'])+row('Käänny',['←','→'])+row('Juokse',['Shift'])+row('Tartu, vapauta tai käytä',['E','Hiiren 1'])+row('Ammu pulssikiväärillä',['Hiiren 1','F'])+row('Syöksy ja väistä',['Välilyönti'])+row('Tauko',['Esc'])+'<p class="helpfooter">Ruutuohjaimen saa esiin pelin oikeasta yläkulmasta. Liiku vetämällä vasenta ohjainta ja käänny vetämällä pelikenttää. λ-painikkeella voit käyttää esineitä ja siepata tai palauttaa energiapallon. Ratapihalla pidä ampumapainiketta pohjassa. Pulssikiväärissä on loputtomasti panoksia. Betonivallit ja rahtikontit pysäyttävät vihollisten tulen ja järistykset. Syöksy liikesuuntaan omalla painikkeellaan.</p>';
+    heading='Ohjaimet';html='<p class="fieldlabel">CITY 17 · FANITEHTÄVÄ</p>'+row('Liiku',['W','A','S','D'])+row('Eteen ja taakse',['↑','↓'])+row('Katso ympärillesi',['Hiiri'])+row('Käänny',['←','→'])+row('Juokse',['Shift'])+row('Hyppää',['Välilyönti'])+row('Kyykisty',['Ctrl','C'])+row('Tartu, vapauta tai käytä',['E','Hiiren 1'])+row('Ammu pulssikiväärillä',['Hiiren 1','F'])+row('Syöksy ja väistä',['Q'])+row('Tauko',['Esc'])+'<p class="helpfooter">Ruutuohjaimen saa esiin pelin oikeasta yläkulmasta. Liiku vetämällä vasenta ohjainta ja käänny vetämällä pelikenttää. λ-painikkeella voit käyttää esineitä ja siepata tai palauttaa energiapallon. Ratapihalla pidä ampumapainiketta pohjassa. Pulssikiväärissä on loputtomasti panoksia. Betonivallit ja rahtikontit pysäyttävät vihollisten tulen ja järistykset. Syöksy liikesuuntaan omalla painikkeellaan.</p>';
   }else if(name==='settings'){
     heading='Asetukset';html='<div class="row"><span>Äänet</span><button id="soundToggle" class="toggle"></button></div><div class="row"><label for="volume">Äänenvoimakkuus<small id="volumeValue"></small></label><input id="volume" type="range" min="0" max="100" value="'+Number(prefs.volume)+'"></div><div class="row"><label for="sensitivity">Hiiren herkkyys<small id="sensValue"></small></label><input id="sensitivity" type="range" min="1" max="100" value="'+Number(prefs.sensitivity)+'"></div><p class="helpfooter">Asetukset tallentuvat tähän selaimeen.</p>';
   }else if(name==='pause'){
@@ -135,8 +135,6 @@ function retry(){
 function defeat(){checkpoint();unlock();openPanel('defeat')}
 function updatePlayLabel(){
   $('playText').textContent=progress?'Jatka kampanjaa':'Aloita kampanja';
-  const chapter=progress?.stage==='terminal'&&progress.yardCleared===true?2:progress?.stage==='yard'||progress?.stage==='terminal'?1:0;
-  document.querySelectorAll('.route li').forEach((item,i)=>{if(i===chapter)item.setAttribute('aria-current','step');else item.removeAttribute('aria-current')});
 }
 function pause(){if(!game?.running)return;game.stop();drag=null;releasePad();checkpoint();unlock();openPanel('pause')}
 function resume(){closePanel();game.start();$('world').focus();soundInit()}
@@ -147,20 +145,23 @@ panel.addEventListener('cancel',e=>{e.preventDefault();back()});
 panel.addEventListener('click',e=>{if(e.target!==panel)return;const r=panel.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)back()});
 $('fullBtn').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else if(document.documentElement.requestFullscreen)await document.documentElement.requestFullscreen();else toast('Selain ei tue koko näytön tilaa.')}catch{toast('Koko näytön tila ei ole käytettävissä tässä näkymässä.')}};
 document.addEventListener('fullscreenchange',()=>{let label=document.fullscreenElement?'Poistu koko näytöstä':'Koko näyttö';$('fullBtn').setAttribute('aria-label',label);$('fullBtn').title=label;$('fullIcon').setAttribute('href',document.fullscreenElement?'#shrink':'#full')});
-const gameKeys=new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Escape','KeyE','KeyF','KeyW','KeyA','KeyS','KeyD','ShiftLeft','ShiftRight']);
-const keyAliases={w:'KeyW',a:'KeyA',s:'KeyS',d:'KeyD',e:'KeyE',f:'KeyF',' ':'Space',Shift:'ShiftLeft'};
+const gameKeys=new Set(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','Escape','KeyE','KeyF','KeyW','KeyA','KeyS','KeyD','KeyQ','KeyC','ControlLeft','ControlRight','ShiftLeft','ShiftRight']);
+const keyAliases={w:'KeyW',a:'KeyA',s:'KeyS',d:'KeyD',e:'KeyE',f:'KeyF',q:'KeyQ',c:'KeyC',Control:'ControlLeft',' ':'Space',Shift:'ShiftLeft'};
 function gameKey(e){
   if(gameKeys.has(e.code))return e.code;
   return keyAliases[e.key]||keyAliases[e.key?.toLowerCase()]||e.key;
 }
 window.addEventListener('keydown',e=>{
-  if(panel.open||e.ctrlKey||e.metaKey||e.altKey)return;
+  if(panel.open||e.metaKey||e.altKey||(!game?.running&&e.ctrlKey))return;
   if(game?.running){
     const code=gameKey(e);
     if(!gameKeys.has(code))return;
     e.preventDefault();
+    game.advance(performance.now());
+    if(!game.running)return;
     if(code==='Escape'){if(!e.repeat)pause();return}
-    if(code==='Space'){if(!e.repeat)game.dash();return}
+    if(code==='Space'){if(!e.repeat)game.jump();return}
+    if(code==='KeyQ'){if(!e.repeat)game.dash();return}
     if(code==='KeyE'){if(!e.repeat)game.action();return}
     if(code==='KeyF'&&!e.repeat)game.yard?.fire();
     game.press(code);
@@ -170,8 +171,8 @@ window.addEventListener('keydown',e=>{
   if(e.code==='ArrowDown'||e.code==='ArrowUp'){e.preventDefault();nav[(i<0?(e.code==='ArrowDown'?0:nav.length-1):(i+(e.code==='ArrowDown'?1:-1)+nav.length)%nav.length)].focus()}
   if(e.key==='Enter'&&document.activeElement===document.body){e.preventDefault();$('playBtn').click()}
 },true);
-window.addEventListener('keyup',e=>game?.keys.delete(gameKey(e)),true);
-function look(dx,dy){if(!game?.running)return;const sense=.00055+prefs.sensitivity*.00004;game.angle+=dx*sense;game.cameraPitch=Math.min(.29,Math.max(-.29,game.cameraPitch-dy*sense*.5))}
+window.addEventListener('keyup',e=>{if(game?.running)game.advance(performance.now());game?.keys.delete(gameKey(e))},true);
+function look(dx,dy){if(!game?.running)return;const sense=.00055+prefs.sensitivity*.00004;game.angle+=dx*sense;game.cameraPitch=Math.min(1.23,Math.max(-1.23,game.cameraPitch-dy*sense*.83))}
 document.addEventListener('mousemove',e=>{if(document.pointerLockElement===$('world'))look(e.movementX,e.movementY)});
 document.addEventListener('pointerlockchange',()=>{
   drag=null;
@@ -191,7 +192,7 @@ $('actBtn').onpointerdown=e=>{
   if(!game?.running)return;e.preventDefault();$('actBtn').setPointerCapture(e.pointerId);
   if(game.yard?.armed)game.yard.trigger=true;game.action(true);
 };
-$('actBtn').onclick=e=>{if(e.detail===0)game?.action(true)};$('dashBtn').onclick=()=>game?.dash();
+$('actBtn').onclick=e=>{if(e.detail===0)game?.action(true)};$('dashBtn').onclick=()=>game?.dash();$('jumpBtn').onclick=()=>game?.jump();
 function movePad(e){if(e.pointerId!==padPointer)return;const r=$('pad').getBoundingClientRect(),dx=e.clientX-r.left-r.width/2,dy=e.clientY-r.top-r.height/2,lim=Math.max(31,Math.hypot(dx,dy));game.setStick(dx/lim,dy/lim);$('stick').style.transform='translate('+game.joy.x*29+'px,'+game.joy.y*29+'px)'}
 function releasePad(){padPointer=null;if(game)game.setStick(0,0);$('stick').style.transform=''}
 $('pad').onpointerdown=e=>{if(!game?.running||padPointer!==null)return;e.preventDefault();padPointer=e.pointerId;$('pad').setPointerCapture(e.pointerId);movePad(e)};$('pad').onpointermove=movePad;$('pad').onlostpointercapture=$('pad').onpointerup=$('pad').onpointercancel=e=>{if(e.pointerId===padPointer)releasePad()};

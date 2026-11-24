@@ -1,6 +1,6 @@
 'use strict';
 
-// World positions are in the same tile units as the city raycaster.
+// The terminal uses the same world units and collision grid as the city.
 const terminalMap = [
   '4444444444444444444444','4444444444444444444444',
   '4444000000000000004444','4440000000000000000444',

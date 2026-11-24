@@ -1,7 +1,7 @@
 # Half-Life 2 · Aikakatkos
 
-**[Pelaa kampanjaa selaimessa](https://eliasaarynen-creator.github.io/hl2remake/?v=ohjaus2)**
+**[Pelaa kampanjaa selaimessa](https://eliasaarynen-creator.github.io/hl2remake/?v=source3d)**
 
-Valitse **Aloita kampanja** tai jatka tallennuksesta. Liiku WASD-näppäimillä. Nuolilla ylös ja alas kuljet eteen ja taakse, nuolilla vasemmalle ja oikealle käännyt. Voit myös avata **Ruutuohjaimen** ja vetää vasemman alakulman ohjainta hiirellä tai koskettamalla.
+Aikakatkos on suomenkielinen fanikampanja. Etsi aseman energiakennot, puolusta ratapihaa Karon ja Särön kanssa ja kohtaa G-Man terminaalissa. Peli rakentaa kentät ja aseet CSS:n kolmiulotteisista pinnoista.
 
-Asema-aukiolla E tarttuu energiakennoon. Ratapihalla Karo ja Särö antavat pulssikiväärin kolmea Combine-aaltoa varten. Ammu F-näppäimellä tai hiiren ykköspainikkeella. Portin takana odottaa G-Man.
+Liiku WASD-näppäimillä, juokse Shiftillä, hyppää välilyönnillä ja kyykisty C:llä tai Ctrlillä. E käyttää esineitä. F tai hiiren ykköspainike ampuu ratapihan pulssikiväärillä. Q syöksyy ja Esc avaa taukovalikon. Hiirellä voit kääntyä myös vetämällä pelikenttää. Ruutuohjain toimii kosketuksella tai hiirellä.
