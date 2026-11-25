@@ -101,6 +101,7 @@ function architecture(root,map,stage){
 }
 function prop3(root,type){
   if(['kajo','saro','guard','giant','gman','ghost','soul'].includes(type))return actor3(root,type);
+  if(type==='stationTrain'){stationTrainModel(root);return null}
   if(type==='cell'){
     drum3(root,0,.30,0,.20,.20,.48,'hot-coil');
     for(const z of [.075,.19,.32,.46,.56])drum3(root,0,z,0,.212,.212,z===.56?.075:.026,'gunmetal');
@@ -177,7 +178,8 @@ class CityScene{
       return [...y.sprites().filter(o=>!yardProps.includes(o)),...y.rings.map(r=>({...r,type:'ring',size:r.radius})),
         ...y.flashes.map(v=>({type:v.player?'pulseTrace':'tracer',x:v.from.x,y:v.from.y,z:v.from.z,to:v.to}))];
     }
-    return [g.spirit,g.station,{...g.exit,type:g.done===2?'exitOpen':'exit'},
+    return [g.spirit,g.station,{...g.exit,type:'exit'},
+      ...(g.trainActive?[{type:'stationTrain',x:g.trainX,y:stationTrain.y}]:[]),
       ...g.cells.filter((c,i)=>!c.inPlace&&i!==g.held),
       ...(g.done===0?[{x:13.6,y:5.48,type:'gman',height:1.87}]:[])];
   }
@@ -254,7 +256,7 @@ class CityScene{
       this.lastGun=gunKey;
     }
     this.player.setAttribute('transform','translate('+g.x+' '+g.y+') rotate('+g.angle*180/Math.PI+')');
-    const goal=g.encounter?.target||(g.yard?(g.yard.armed?yardGate:rebels[0]):g.held>=0?g.station:g.cells.find(c=>!c.inPlace)||g.exit);
+    const goal=g.encounter?.target||(g.yard?(g.yard.armed?yardGate:rebels[0]):g.held>=0?g.station:g.cells.find(c=>!c.inPlace)||g.trainDoor);
     this.waypoint.setAttribute('cx',goal.x);this.waypoint.setAttribute('cy',goal.y);
     this.blips.setAttribute('d',(g.yard?.enemies||[]).map(e=>'M'+(e.x-.22)+' '+(e.y-.22)+'h.44v.44h-.44z').join(''));
   }

@@ -31,19 +31,38 @@ class CityGame {
     this.map=this.streetMap;this.encounter=null;this.yard=null;this.storyStarted=false;this.ui.radio.clear();this.dashTime=0;this.dashCooldown=0;
     this.dashX=0;this.dashY=0;this.walkForward=0;this.walkSide=0;this.footstep=0;
     this.resetMovement();
-    this.x=3.3;this.y=8.5;this.angle=-.08;this.cameraPitch=0;this.held=-1;this.done=0;this.elapsed=0;
+    this.x=3.3;this.y=8.5;this.angle=-.08;this.cameraPitch=0;this.held=-1;this.done=0;this.trainTime=0;this.elapsed=0;
     this.cells=[{x:6.6,y:8.1,type:'cell',inPlace:false},{x:16.8,y:10.3,type:'cell',inPlace:false}];
     this.completed=false;this.beam=0;this.bob=0;
   }
   value(x,y){return Number(this.map[Math.floor(y)]?.[Math.floor(x)]??1)}
   clear(x,y,r=.19){return !this.value(x-r,y-r)&&!this.value(x+r,y-r)&&!this.value(x-r,y+r)&&!this.value(x+r,y+r)}
+  get trainActive(){return this.map===this.streetMap&&this.done===2}
+  get trainX(){return stationTrain.x+13*(1-metroEase(this.trainTime,0,stationTrain.arrival))}
+  get trainDoor(){return {x:stationTrain.x,y:stationTrain.y+(this.y<stationTrain.y?-1:1)*(stationTrain.halfWidth+.22)}}
+  get canBoard(){return this.trainActive&&this.trainTime>=stationTrain.arrival&&this.distance(this.trainDoor)<1.7&&this.visible(this.trainDoor)}
+  inTrainBody(x,y){
+    return this.trainActive&&Math.abs(x-this.trainX)<stationTrain.halfLength+.17&&Math.abs(y-stationTrain.y)<stationTrain.halfWidth+.17;
+  }
+  updateStationTrain(dt){
+    const before=this.trainTime;
+    this.trainTime=Math.min(stationTrain.arrival,before+dt);
+    if(this.inTrainBody(this.x,this.y)){
+      const side=this.y<stationTrain.y?-1:1;
+      const safeY=stationTrain.y+side*(stationTrain.halfWidth+.26);
+      this.y=this.clear(this.x,safeY)?safeY:stationTrain.y-side*(stationTrain.halfWidth+.26);
+    }
+    if(before<stationTrain.arrival&&this.trainTime===stationTrain.arrival){this.ui.tone(415);this.updateUI()}
+  }
   get spirit(){
     const pos=[{x:6.62,y:7.65},{x:11.7,y:7.15},{x:16.8,y:4.5}][this.done];
     return {...pos,type:'soul',height:1.88,aspect:.427,z:.06+.055*Math.sin(this.elapsed*2.6),alpha:.92};
   }
   get nearSpirit(){return this.distance(this.spirit)<3.8&&this.visible(this.spirit)&&Math.cos(Math.atan2(this.spirit.y-this.y,this.spirit.x-this.x)-this.angle)>.82}
-  openMetro(time=0){
-    this.metro=new MetroRide(this,time);
+  openMetro(time=0,stage='metro'){
+    this.ui.radio.clear();this.clearInput();
+    this.metro=stage==='transfer'?new RailTransfer(this,time):new MetroRide(this,time);
+    if(this.running)this.metro.syncSound(true);
     this.ui.notice.textContent='';
     this.updateUI();
   }
@@ -52,6 +71,9 @@ class CityGame {
   }
   finishMetro(){
     if(!this.metro)return;
+    if(this.metro.route.stage==='transfer'){
+      this.closeMetro();this.clearInput();this.openYard();this.tell('Ratapiha 09 · Karo ja Särö ovat vaunun vieressä.');return;
+    }
     if(this.ui.replayFinished())return;
     const elapsed=this.elapsed;
     this.reset();this.elapsed=elapsed;
@@ -87,13 +109,13 @@ class CityGame {
     this.dashTime=.2;this.dashCooldown=2.25;this.ui.tone(135);
   }
   serialize(){
-    if(this.metro)return {stage:'metro',time:this.metro.time,elapsed:this.elapsed};
+    if(this.metro)return {stage:this.metro.route.stage,time:this.metro.time,elapsed:this.elapsed};
     if(this.encounter)return {stage:'terminal',yardCleared:true,checkpoint:this.encounter.checkpoint,elapsed:this.elapsed};
     if(this.yard)return this.yard.checkpoint();
-    return {stage:'station',x:this.x,y:this.y,angle:this.angle,held:this.held,cells:this.cells,elapsed:this.elapsed}}
+    return {stage:'station',trainTime:this.trainTime,x:this.x,y:this.y,angle:this.angle,held:this.held,cells:this.cells,elapsed:this.elapsed}}
   restore(s) {
-    if(s?.stage==='metro'&&Number.isFinite(s.time)&&s.time>=0&&s.time<metroDuration&&Number.isFinite(s.elapsed)&&s.elapsed>=0){
-      this.reset();this.elapsed=s.elapsed;this.openMetro(s.time);return true;
+    if((s?.stage==='metro'||s?.stage==='transfer')&&Number.isFinite(s.time)&&s.time>=0&&s.time<(s.stage==='transfer'?transferRoute.duration:metroDuration)&&Number.isFinite(s.elapsed)&&s.elapsed>=0){
+      this.reset();this.elapsed=s.elapsed;this.openMetro(s.time,s.stage);return true;
     }
     if(s?.stage==='yard'&&typeof s.armed==='boolean'&&Number.isInteger(s.wave)&&s.wave>=0&&s.wave<=3&&(s.armed||s.wave===0)&&Number.isFinite(s.elapsed)&&s.elapsed>=0){
       this.reset();this.elapsed=s.elapsed;this.openYard(s);return true;
@@ -106,7 +128,9 @@ class CityGame {
     }
     if(!s||!Number.isFinite(s.x)||!Number.isFinite(s.y)||!Number.isFinite(s.angle)||!this.clear(s.x,s.y)||!Array.isArray(s.cells)||s.cells.length!==2||![-1,0,1].includes(s.held)||!Number.isFinite(s.elapsed)||s.elapsed<0)return false;
     if(!s.cells.every(c=>c&&Number.isFinite(c.x)&&Number.isFinite(c.y)&&!this.value(c.x,c.y)&&typeof c.inPlace==='boolean')||(s.held>=0&&s.cells[s.held].inPlace))return false;
-    this.reset();this.x=s.x;this.y=s.y;this.angle=s.angle;this.held=s.held;this.elapsed=s.elapsed;this.cells=s.cells.map(c=>({...c,type:'cell'}));this.done=this.cells.filter(c=>c.inPlace).length;return true;
+    this.reset();this.x=s.x;this.y=s.y;this.angle=s.angle;this.held=s.held;this.elapsed=s.elapsed;this.cells=s.cells.map(c=>({...c,type:'cell'}));this.done=this.cells.filter(c=>c.inPlace).length;
+    if(this.done===2)this.trainTime=Number.isFinite(s.trainTime)?metroClamp(s.trainTime,0,stationTrain.arrival):stationTrain.arrival;
+    return true;
   }
   resetMovement(){
     this.vx=0;this.vy=0;this.lift=0;this.verticalSpeed=0;this.crouch=0;
@@ -148,12 +172,12 @@ class CityGame {
     if(this.metro||!this.running)return;
     if(this.encounter){this.encounter.input();return}
     if(this.yard){this.yard.use(fire);return}
-    if(this.done===2&&this.distance(this.exit)<1.8){this.openYard();return}
+    if(this.canBoard){this.openMetro(0,'transfer');this.ui.save();return}
     if(this.held>=0){
       const c=this.cells[this.held];
-      if(this.distance(this.station)<2.4&&this.visible(this.station)){c.inPlace=true;c.x=this.station.x;c.y=this.station.y;this.held=-1;this.done++;this.ui.radio.say(this.done===1?'firstCell':'secondCell');this.ui.tone(330);this.tell(this.done===2?'Portti avattu. Seuraa vihreää merkkiä.':'Releessä on virtaa. Etsi toinen kenno.')}
+      if(this.distance(this.station)<2.4&&this.visible(this.station)){c.inPlace=true;c.x=this.station.x;c.y=this.station.y;this.held=-1;this.done++;this.ui.radio.say(this.done===1?'firstCell':'secondCell');this.ui.tone(330);this.tell(this.done===2?'Raide 17 sai virran. Juna saapuu laiturille.':'Releessä on virtaa. Etsi toinen kenno.')}
       else{let dx=Math.cos(this.angle),dy=Math.sin(this.angle),range=.3;while(range<3.6&&this.clear(this.x+dx*(range+.15),this.y+dy*(range+.15),.22))range+=.15;c.x=this.x+dx*(range-.15);c.y=this.y+dy*(range-.15);this.held=-1;this.ui.tone(120);this.tell('Kenno vapautettu.')}
-    } else {let i=this.nearbyCell();if(i<0){if(this.nearSpirit){if(!this.ui.radio.current)this.ui.radio.say(['station','firstCell','secondCell'][this.done]);return}this.tell(this.done===2?'Kulje vihreälle uloskäynnille.':'Tähtää läheiseen oranssiin kennoon.');return}this.held=i;this.ui.tone(205);this.tell('Kenno kiinni. Vie se siniselle releelle.')}
+    } else {let i=this.nearbyCell();if(i<0){if(this.nearSpirit){if(!this.ui.radio.current)this.ui.radio.say(['station','firstCell','secondCell'][this.done]);return}this.tell(this.done===2?'Nouse raiteen 17 junaan keskimmäisestä ovesta.':'Tähtää läheiseen oranssiin kennoon.');return}this.held=i;this.ui.tone(205);this.tell('Kenno kiinni. Vie se siniselle releelle.')}
     this.beam=1;this.updateUI();this.ui.save();
   }
   updateUI(){
@@ -161,8 +185,8 @@ class CityGame {
     this.ui.arena.classList.toggle('metro',!!this.metro);
     this.ui.skipMetro.hidden=!this.metro;
     if(this.metro){
-      this.ui.section.textContent='LUKU 0 · VIIMEINEN VUORO';
-      this.ui.mission.textContent='Katso ulos metrovaunun ikkunasta.';
+      this.ui.section.textContent=this.metro.route.chapter;
+      this.ui.mission.textContent=this.metro.route.objective;this.ui.skipMetro.textContent=this.metro.route.skip;
       this.ui.arena.classList.remove('hurt','yard','terminal');this.ui.bossHud.hidden=true;this.ui.warning.hidden=true;
       return;
     }
@@ -184,7 +208,7 @@ class CityGame {
       this.ui.weapon.textContent=y.armed?'∞  PANOKSET':'VALMIS';
       this.ui.health.textContent=y.health+' %';this.ui.healthBar.value=y.health;
     }else{
-      this.ui.mission.textContent=this.done===2?'Avaa portti ratapihalle.':'Vie energiakennot siniselle releelle · '+this.done+'/2';
+      this.ui.mission.textContent=this.done===2?(this.trainTime<stationTrain.arrival?'Juna saapuu raiteelle 17.':'Nouse junaan keskimmäisestä ovesta.'):'Vie energiakennot siniselle releelle · '+this.done+'/2';
       this.ui.weapon.textContent=this.held<0?'VALMIS':'KENNO KIINNI';
     }
   }
@@ -201,6 +225,7 @@ class CityGame {
   step(dt,time){
     this.elapsed+=dt;
     if(this.metro){this.metro.step(dt);return}
+    if(this.trainActive)this.updateStationTrain(dt);
     // Keep a tap until the simulation has sampled it at least once.
     const down=code=>this.keys.has(code)||this.pressed.has(code);
     const key=(a,b)=>Number(down(a)||down(b));
@@ -227,8 +252,8 @@ class CityGame {
     }
     const steps=Math.max(1,Math.ceil(Math.max(Math.abs(dx),Math.abs(dy))/.16));
     for(let i=0;i<steps;i++){
-      if(this.clear(this.x+dx/steps,this.y))this.x+=dx/steps;
-      if(this.clear(this.x,this.y+dy/steps))this.y+=dy/steps;
+      if(this.clear(this.x+dx/steps,this.y)&&!this.inTrainBody(this.x+dx/steps,this.y))this.x+=dx/steps;
+      if(this.clear(this.x,this.y+dy/steps)&&!this.inTrainBody(this.x,this.y+dy/steps))this.y+=dy/steps;
     }
     this.bob+=Math.min(1,Math.hypot(f,s))*dt*8;this.beam=Math.max(0,this.beam-dt*2.5);
     if(time>this.messageEnd&&this.ui.notice.textContent)this.ui.notice.textContent='';
@@ -237,7 +262,7 @@ class CityGame {
     else if(this.yard){
       this.yard.update(dt);
       if(this.yard.clear&&this.distance(yardGate)<.95)this.openTerminal(this.yard.nextBoss);
-    }else if(this.done===2&&this.distance(this.exit)<.95)this.openYard();
+    }
     if(!this.running)return;
     this.footstep-=dt;
     if(Math.hypot(f,s)>.3&&this.footstep<=0){this.ui.footstep?.();this.footstep=speed>4?.29:.45}
@@ -264,17 +289,17 @@ class CityGame {
     this.ui.phaseSplash.hidden=!splash;
     if(splash&&this.ui.phaseSplash.textContent!==splash)this.ui.phaseSplash.textContent=splash;
     const keyName=this.ui.arena.classList.contains('screen-controls')?'λ':'E';
-    const hint=this.encounter?this.encounter.hint():this.yard?this.yard.hint:this.done===2&&this.distance(this.exit)<1.8?'Siirry ratapihalle':this.held>=0&&this.distance(this.station)<2.4?'Kytke kenno':this.held<0&&this.nearbyCell()>=0?'Tartu kennoon' :this.held<0&&this.nearSpirit?'Kuuntele kaikua':'';
+    const hint=this.encounter?this.encounter.hint():this.yard?this.yard.hint:this.canBoard?'Nouse junaan':this.held>=0&&this.distance(this.station)<2.4?'Kytke kenno':this.held<0&&this.nearbyCell()>=0?'Tartu kennoon' :this.held<0&&this.nearSpirit?'Kuuntele kaikua':'';
     const prompt=hint?'[ '+keyName+' ]  '+hint:'';
     if(this.ui.interact.textContent!==prompt)this.ui.interact.textContent=prompt;
     this.frameId=requestAnimationFrame(t=>this.frame(t));
   }
   drawBearing(){
     const e=this.encounter;
-    const obj=e?e.target:this.yard?(this.yard.clear?yardGate:this.yard.contact||(!this.yard.armed?rebels[1]:yardGate)):this.held>=0?this.station:this.done===2?this.exit:this.cells.filter(c=>!c.inPlace).sort((a,b)=>this.distance(a)-this.distance(b))[0];
+    const obj=e?e.target:this.yard?(this.yard.clear?yardGate:this.yard.contact||(!this.yard.armed?rebels[1]:yardGate)):this.held>=0?this.station:this.done===2?this.trainDoor:this.cells.filter(c=>!c.inPlace).sort((a,b)=>this.distance(a)-this.distance(b))[0];
     if(!obj)return;
     const angle=Math.atan2(obj.y-this.y,obj.x-this.x)-this.angle,relative=Math.atan2(Math.sin(angle),Math.cos(angle));
-    const name=e?'G-MAN':this.yard?(this.yard.clear?'PORTTI':this.yard.armed?'PARTIO':'VASTARINTA'):this.held>=0?'RELE':this.done===2?'PORTTI':'KENNO';
+    const name=e?'G-MAN':this.yard?(this.yard.clear?'PORTTI':this.yard.armed?'PARTIO':'VASTARINTA'):this.held>=0?'RELE':this.done===2?'JUNA':'KENNO';
     const label=(relative<-.65?'◀  ':'')+name+'  '+Math.round(this.distance(obj)*2.3)+' m'+(relative>.65?'  ▶':'');
     if(this.ui.bearing.textContent!==label)this.ui.bearing.textContent=label;
   }

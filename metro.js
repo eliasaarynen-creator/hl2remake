@@ -18,18 +18,20 @@ function metroEase(t,a,b){
   return u*u*(3-2*u);
 }
 
-class MetroRide{
-  constructor(game,time=0){
+const metroRoute={
+  stage:'metro',duration:metroDuration,lines:metroLines,audio:'assets/metro-matka.mp3',
+  chapter:'LUKU 0 · VIIMEINEN VUORO',objective:'Katso ulos metrovaunun ikkunasta.',skip:'Ohita metromatka'
+};
+
+class CarriageRide{
+  constructor(game,time,route){
+    this.route=route;
     this.game=game;this.time=time;this.pan=0;this.tilt=0;this.zoom=0;this.caption=-2;
     const id=name=>document.getElementById(name);
     this.car=id('metroCar');this.outside=id('metroOutside');this.platform=id('metroPlatform');
-    this.figures=[id('metroKaro'),id('metroSaro'),id('metroGman')];
-    this.shield=id('metroShield');this.orb=id('metroOrb');this.spark=id('metroSpark');this.bolt=id('metroBolt');
-    this.front=id('metroTunnel');this.beam=id('metroBeam');this.dial=id('metroDial');this.title=id('metroTitle');
-    this.actors=id('metroActors');this.indicator=id('metroSignal');
-    this.track=new Audio('assets/metro-matka.mp3');this.track.preload='auto';this.track.onloadedmetadata=()=>this.syncSound();
+    this.track=new Audio(route.audio);this.track.preload='auto';this.track.onloadedmetadata=()=>this.syncSound();
     this.reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    this.car.hidden=false;this.render();
+    this.car.dataset.route=route.stage;this.car.hidden=false;
   }
   syncSound(start=false){
     const track=this.track;
@@ -46,28 +48,43 @@ class MetroRide{
       (key('KeyC')-key('Space'))*.65*dt);
     this.zoom=metroClamp(this.zoom+(key('KeyW')+key('ArrowUp')-key('KeyS')-key('ArrowDown')-stick.y)*dt);
     g.pressed.clear();g.pendingJoy=null;
-    this.time=Math.min(metroDuration,this.time+dt);
-    if(this.time>=metroDuration){g.finishMetro();return}
+    this.time=Math.min(this.route.duration,this.time+dt);
+    if(this.time>=this.route.duration){g.finishMetro();return}
     if(Math.floor(this.time*2)!==Math.floor((this.time-dt)*2))this.syncSound();
   }
   subtitle(){
-    const line=metroLines.findIndex(([at,end])=>this.time>=at&&this.time<end);
+    const line=this.route.lines.findIndex(([at,end])=>this.time>=at&&this.time<end);
     if(line===this.caption)return;
     this.caption=line;const radio=this.game.ui.radio;
     radio.box.hidden=line<0;
     if(line<0)return;
-    const [,,who,words]=metroLines[line],person=speakers[who];
+    const [,,who,words]=this.route.lines[line],person=speakers[who];
     radio.name.textContent=person.name;radio.words.textContent=words;radio.channel.textContent=person.channel;
     radio.box.style.setProperty('--voice',person.color);radio.box.dataset.person=who;
+  }
+  view(){
+    this.car.style.setProperty('--head-x',(-this.pan*3.7)+'%');
+    this.car.style.setProperty('--head-y',(-this.tilt*2.5)+'%');
+    this.car.style.setProperty('--lean',1+this.zoom*.055);
+  }
+}
+
+class MetroRide extends CarriageRide{
+  constructor(game,time=0){
+    super(game,time,metroRoute);
+    const id=name=>document.getElementById(name);
+    this.figures=[id('metroKaro'),id('metroSaro'),id('metroGman')];
+    this.shield=id('metroShield');this.orb=id('metroOrb');this.spark=id('metroSpark');this.bolt=id('metroBolt');
+    this.front=id('metroTunnel');this.beam=id('metroBeam');this.dial=id('metroDial');this.title=id('metroTitle');
+    this.actors=id('metroActors');this.indicator=id('metroSignal');
+    this.render();
   }
   render(){
     const t=this.time;
     const entry=1-metroEase(t,0,7.4),exit=metroEase(t,28.4,38.2);
     const travel=entry*.84-exit*1.08;
     const shake=this.reduced?0:Math.sin(t*19)*(.7*entry+.55*exit)+Math.sin(t*8)*.22;
-    this.car.style.setProperty('--head-x',(-this.pan*3.7)+'%');
-    this.car.style.setProperty('--head-y',(-this.tilt*2.5)+'%');
-    this.car.style.setProperty('--lean',1+this.zoom*.055);
+    this.view();
     this.outside.style.transform='translateY('+shake+'px)';
     this.platform.style.backgroundPosition='calc(50% + '+(travel*this.outside.clientWidth*.94-this.pan*6)+'px) center';
     this.actors.style.transform='translateX('+(travel*100-this.pan*.6)+'%)';

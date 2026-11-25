@@ -38,3 +38,29 @@
 @media(max-height:540px){.metro-window{inset:20% 5% 18%}.metro-destination{top:6%}#arena.metro #radio{bottom:2%}#arena.metro #radio p{font-size:14px}}
 
 #metroSignal::after{content:"";position:absolute;bottom:33%;right:60%;width:105%;height:47%;transform:rotate(var(--lever,43deg));transform-origin:50% 95%;border-radius:3px;background:linear-gradient(#e7b775 0 24%,#514d41 26%,#98988b 90%);box-shadow:1px 1px 2px #191e1e70}
+
+/* City-side view during the departure from track 17. */
+#transferView,.transfer-cracks,#transferFlare{display:none;position:absolute;inset:0}
+#metroCar[data-route=transfer] :is(#transferView,.transfer-cracks,#transferFlare){display:block}
+#metroCar[data-route=transfer] :is(#metroTitle,#metroOutside){display:none}
+#metroCar[data-route=transfer] .metro-interior{transform:translate(var(--head-x),calc(var(--head-y) + var(--rail-jolt,0%))) scale(calc(var(--lean) * 1.055)) rotate(var(--car-roll,0deg))}
+#transferView{overflow:hidden;background:#594c45}
+#transferCity{position:absolute;inset:0 auto 0 -7%;width:132%;background:#586172 url(assets/raide17-kaupunki.webp) center 56%/cover no-repeat}
+#transferRail{position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(90deg,transparent 0 calc(100% - 11px),#182323 100%) 0 0/64vw 100%,linear-gradient(0deg,#25302e 0 2%,transparent 2.7% 8%,#243033df 8.3% 9.3%,transparent 9.8% 92%,#293236a8 92.4% 92.7%,transparent 93%)}
+.transfer-strike{position:absolute;width:0;height:0}
+.transfer-strike i,.transfer-strike b,.transfer-strike span,#transferIncoming{position:absolute;display:block;pointer-events:none}
+.transfer-strike i{width:clamp(3px,.3vw,6px);height:clamp(26px,6vh,65px);bottom:0;background:linear-gradient(transparent,#ddb786 54%,#fff1be 94%,#7d573a);border-radius:80% 20% 65% 30%;transform-origin:bottom}
+.transfer-strike b{width:clamp(47px,9vw,154px);aspect-ratio:1.2;border-radius:52% 41% 48% 31%;background:radial-gradient(ellipse at 42% 63%,#fff5b7 4%,#ffe294 12%,#ffa24e 26%,#bc5f39bd 40%,transparent 65%),radial-gradient(ellipse at 67% 50%,#ffbe65 10%,#c55832ab 30%,transparent 54%);filter:drop-shadow(0 0 1.4vmin #ff9a4b88)}
+.transfer-strike span{width:clamp(44px,6.5vw,110px);aspect-ratio:.66;transform-origin:55% 90%;background:radial-gradient(ellipse at 51% 69%,#494746e6 4%,#585250a6 24%,transparent 53%),radial-gradient(ellipse at 36% 39%,#4b4a4add 10%,transparent 40%),radial-gradient(ellipse at 67% 28%,#64605eab 4%,transparent 40%)}
+#transferIncoming{left:83%;top:4%;width:clamp(11px,2.4vmin,25px);aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,#fffada 11%,#ffbc58 41%,#c2592a 59%,transparent 73%);box-shadow:0 0 1vmin #ffc36b;transform-origin:50% 60%}
+#transferIncoming::after{content:"";position:absolute;width:45%;height:450%;bottom:75%;left:48%;transform-origin:bottom;transform:rotate(32deg);background:linear-gradient(0deg,#ffd885,#d69c63a1 38%,transparent);border-radius:80%}
+#transferFlare{background:radial-gradient(ellipse at 65% 44%,#ffe6ad,#dbac77 34%,#8b6e57a1 75%);pointer-events:none}
+.transfer-cracks{width:100%;height:100%;opacity:var(--cracked,0);fill:none;stroke:#c5d8d8ba;stroke-width:1.5;filter:drop-shadow(1px 1px 0 #1b2428ab);pointer-events:none}
+#transferApproach{position:absolute;inset:0;transform:translateX(calc(110% - 112% * var(--yard-approach,0)));background:linear-gradient(90deg,transparent 5%,#27323155 34%,#263538a8),repeating-linear-gradient(90deg,transparent 0 17%,#292f2eaa 17.2% 18%,transparent 18.2% 35%);opacity:var(--yard-approach,0)}
+#transferApproach span{position:absolute;right:15%;bottom:22%;padding:.22em .6em;background:#384b49;color:#ddd6b7;border:3px solid #a8afa2;font:700 clamp(11px,1.8vw,26px) var(--mono);letter-spacing:.12em;transform:rotate(-2deg);box-shadow:2px 4px 6px #1f2628}
+.train-side{background:linear-gradient(#a8af9c 0 41%,#969c8b 42% 48%,#c19758 49% 53%,#75493a 54%,#573c32 91%,#373c36 92%);border:1px solid #61695e}
+.train-window{background:linear-gradient(153deg,#192628 11%,#537073 44%,#2c4344 47%,#162623 92%);border:3px ridge #5d6762}
+.train-chassis,.train-doorwell{background:#242d2a}.train-doorwell{border:5px ridge #7d8071;background:linear-gradient(90deg,#323c37,#181f20 62%,#4e5043)}
+.train-roof{background:linear-gradient(#798478,#575d53)}.train-number{color:#e6cf9f;font-family:var(--mono)}
+.train-destination{color:#ffda8b;background:#212b25;letter-spacing:.04em}.train-door-light,.train-headlamp{background:#d4efc4;box-shadow:0 0 6px #d4efb8}.train-headlamp{background:#ffe7a4}
+.train-wheel{border:5px solid #343b38;background:#50544c;border-radius:50%}.train-step{background:repeating-linear-gradient(135deg,#ac9555 0 6px,#4c5144 7px 12px)}

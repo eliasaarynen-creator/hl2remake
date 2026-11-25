@@ -5,7 +5,7 @@
 <meta name="theme-color" content="#101416"><title>Half-Life 2 · Aikakatkos</title>
 <meta name="description" content="Pelaa Aikakatkos-fanikampanjaa. Näe G-Manin, Karon ja Särön kohtaaminen metrovaunun ikkunasta ja jatka asema-aukiolle City 17:ssä.">
 <link rel="icon" href="assets/lambda.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=1a8ca537a3">
-<link rel="stylesheet" href="metro.css?v=5a66b51438">
+<link rel="stylesheet" href="metro.css?v=ae695e5ba7">
 <link rel="preload" as="image" href="assets/city17.webp">
 </head>
 <body>
@@ -55,7 +55,15 @@
         </div>
         <div id="metroTunnel"></div><div id="metroBeam"></div>
       </div>
+      <div id="transferView">
+        <div id="transferCity"></div><div id="transferRail"></div><i id="transferIncoming"></i>
+        <div id="transferApproach"><span>RATAPIHA 09</span></div>
+      </div>
       <div class="metro-glass"></div>
+      <svg class="transfer-cracks" aria-hidden="true" viewBox="0 0 1000 550" preserveAspectRatio="none">
+        <path d="M653 239l-18-29 4-24-17-18-4-25-28-35-9-36-33-46-18-26 M646 227l-37-12-18-25-24 1-37-20-31 2-28-12 M653 239l-43 17-21 25-39 8-34 28-48 12-23 24 M653 239l-4 26-13 17 7 26-16 32 4 39-22 62 4 24-28 85 M653 239l24 30 28 15 33 48 31 18 23 31 M653 239l43-9 29 7 47-9 40 5 43-17 52 2 39-12 54 6 M653 239l23-30 5-24 31-24 15-35 35-25 20-38 30-19"/>
+        <path d="M638 213l21-6 20 5 17 17-8 23-14 10-27 3-18-20-19 11 M620 176l34 7 27 2 M590 281l19 20 34 7 M677 269l10-17 38-15 M706 284l27-17 39-39 M631 379l20 18 15 34 M712 161l32 4 26-15 M530 171l-10-23-24-17"/>
+      </svg><div id="transferFlare"></div>
     </div>
     <div class="metro-grab"></div><div class="metro-seat"></div><div class="metro-vent"></div>
   </div>
@@ -73,15 +81,16 @@
 </section>
 <dialog id="panel" aria-labelledby="panelTitle"><div class="dialog-top"><span class="dialog-brand"><svg><use href="#lambda"/></svg> AIKAKATKOS</span><button id="closePanel" aria-label="Sulje"><svg class="icon"><use href="#close"/></svg></button></div><div id="panelContent"></div></dialog>
 <div id="toast" role="status"></div>
-<script src="radio-clips.js?v=98f3e893ba" defer></script>
-<script src="story.js?v=5b1dea20b5" defer></script>
+<script src="radio-clips.js?v=6ebae0acdf" defer></script>
+<script src="story.js?v=2b27bff8d3" defer></script>
 <script src="yard.js?v=1eee2d0087" defer></script>
 <script src="encounter.js?v=c5467e9455" defer></script>
 <script src="geometry.js?v=a5c38f99fc" defer></script>
 <script src="models.js?v=cd03b25126" defer></script>
 <script src="projection.js?v=910d3d73aa" defer></script>
-<script src="scene.js?v=4b7a3a7ba6" defer></script>
-<script src="metro.js?v=59137ed2c6" defer></script>
-<script src="game.js?v=adec37b21f" defer></script>
-<script src="app.js?v=3c20beb959" defer></script>
+<script src="scene.js?v=b8815f4887" defer></script>
+<script src="metro.js?v=c509bb4d55" defer></script>
+<script src="rail-transfer.js?v=5d5ddc52d1" defer></script>
+<script src="game.js?v=382529de21" defer></script>
+<script src="app.js?v=2740cb0ad7" defer></script>
 </body></html>

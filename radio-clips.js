@@ -14,7 +14,7 @@ const radioClips = {
   ],
   "secondCell": [
     30.205,
-    8.2914
+    5.51
   ],
   "greeting": [
     38.7464,

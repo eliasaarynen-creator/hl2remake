@@ -12,7 +12,7 @@ const dialogue = {
   arrival: ['soul','Kuuletko kuulutuksen? Minä lähetin sen kaksikymmentä vuotta sitten. Kukaan muu ei enää vastaa.'],
   station: ['soul','Kun seitsemän tunnin sota päättyi, Combine vei asemalta kellot. Kaksi kennoa pitää vielä viimeistä junaa paikallaan.'],
   firstCell: ['soul','Kuuletko kiskot? Nyt muistan. Olin junanlähettäjä. Vaunuissa oli ihmisiä, kun mies salkkuineen astui laiturille.'],
-  secondCell: ['soul','Ratapihan radio heräsi. Karo ja Särö jäivät sinne odottamaan junaa. Etsi heidät portin takaa.'],
+  secondCell: ['soul','Ratapihan radio heräsi. Karo ja Särö jäivät sinne odottamaan junaa.'],
   greeting: ['kajo','Hei, tänne! Kuulitko sinäkin sen kuulutuksen? Meidän radio toisti tähän asti vain samaa sekuntia.'],
   weapon: ['saro','Ota tämä pulssikivääri. Karo ja minä annamme suojatulta. Puvun virtakenno syöttää siihen pulsseja niin kauan kuin pidät liipaisinta pohjassa.'],
   incoming: ['combine','Valvontakeskus yksiköille. Ratapihalla on luvaton lähetys. Katkaiskaa yhteys.'],

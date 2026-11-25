@@ -71,7 +71,7 @@ function renderPanel(){
   }else if(name==='settings'){
     heading='Asetukset';html='<div class="row"><span>Äänet</span><button id="soundToggle" class="toggle"></button></div><div class="row"><label for="volume">Äänenvoimakkuus<small id="volumeValue"></small></label><input id="volume" type="range" min="0" max="100" value="'+Number(prefs.volume)+'"></div><div class="row"><label for="sensitivity">Hiiren herkkyys<small id="sensValue"></small></label><input id="sensitivity" type="range" min="1" max="100" value="'+Number(prefs.sensitivity)+'"></div><p class="helpfooter">Asetukset tallentuvat tähän selaimeen.</p>';
   }else if(name==='pause'){
-    heading='Peli tauolla';html='<p class="fieldlabel">'+(game?.metro?'LUKU 0 · VIIMEINEN VUORO':game?.encounter?'TERMINAALI 00 · G-MAN':game?.yard?'RATAPIHA 09 · VASTARINTA':'CITY 17 · ASEMA-AUKIO')+'</p>'+choice('continue','Jatka peliä','Palaa käynnissä olevaan peliin',true)+choice('pauseControls','Ohjaimet','Liikkuminen, aseet ja vuorovaikutus',false,'keys')+choice('pauseSettings','Asetukset','Äänet ja hiiren herkkyys',false,'gear')+'<button id="toMenu" class="closealt">'+(metroReplay?'Palaa päävalikkoon':practice?'Lopeta harjoittelu':'Tallenna ja palaa päävalikkoon')+'</button>';
+    heading='Peli tauolla';html='<p class="fieldlabel">'+(game?.metro?game.metro.route.chapter:game?.encounter?'TERMINAALI 00 · G-MAN':game?.yard?'RATAPIHA 09 · VASTARINTA':'CITY 17 · ASEMA-AUKIO')+'</p>'+choice('continue','Jatka peliä','Palaa käynnissä olevaan peliin',true)+choice('pauseControls','Ohjaimet','Liikkuminen, aseet ja vuorovaikutus',false,'keys')+choice('pauseSettings','Asetukset','Äänet ja hiiren herkkyys',false,'gear')+'<button id="toMenu" class="closealt">'+(metroReplay?'Palaa päävalikkoon':practice?'Lopeta harjoittelu':'Tallenna ja palaa päävalikkoon')+'</button>';
     if(!practice&&!metroReplay)html+='<button id="restartStory" class="closealt">Aloita kampanja alusta</button>';
   }else if(name==='restartStory'){
     heading='Aloitetaanko metromatkasta?';
@@ -127,7 +127,7 @@ function begin(mode='continue'){
   g.start();$('world').focus();
   if(g.encounter)g.tell('Sieppaa lähestyvä pallo ja palauta se G-Maniin.');
   else if(g.yard)g.tell(g.yard.armed?'Seuraa ratapihan opastinta.':'Karo viittoo sinua lähemmäs.');
-  else if(!g.metro)g.tell(g.held>=0?'Vie kenno siniselle releelle.':g.done===2?'Kulje vihreälle portille.':(arena.classList.contains('screen-controls')?'Liiku vetämällä vasenta ohjainta.':'Liiku WASD-näppäimillä tai nuolilla.'));
+  else if(!g.metro)g.tell(g.held>=0?'Vie kenno siniselle releelle.':g.done===2?'Nouse junaan raiteelta 17.':(arena.classList.contains('screen-controls')?'Liiku vetämällä vasenta ohjainta.':'Liiku WASD-näppäimillä tai nuolilla.'));
   checkpoint();
 }
 function retry(){
