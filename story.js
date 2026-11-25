@@ -54,16 +54,26 @@ class CampaignRadio {
   playClip() {
     this.stopClip();
     if(!this.current||this.paused||!this.prefs.sound)return;
-    const [offset,length]=radioClips[this.current];
+    const coastal=Object.hasOwn(coastClips,this.current);
+    const [offset,length]=(coastal?coastClips:radioClips)[this.current];
+    if(coastal&&this.ctx&&!this.coastLoading){
+      this.coastLoading=fetch('assets/satama-aanet.mp3').then(r=>{
+        if(!r.ok)throw Error('satamaradio');
+        return r.arrayBuffer();
+      }).then(data=>this.ctx.decodeAudioData(data)).then(buffer=>{
+        this.coastBuffer=buffer;if(this.current&&Object.hasOwn(coastClips,this.current))this.playClip();
+      }).catch(()=>{this.coastFallback=true;if(this.current&&Object.hasOwn(coastClips,this.current))this.playClip()});
+    }
+    const buffer=coastal?this.coastBuffer:this.buffer;
     if(this.age>=length)return;
-    if(this.buffer){
+    if(buffer){
       const clip=this.ctx.createBufferSource();
-      clip.buffer=this.buffer;clip.connect(this.output);
+      clip.buffer=buffer;clip.connect(this.output);
       // Start a newly downloaded first line from its beginning.
-      if(!this.started)this.age=0;
+      if(!this.started&&!coastal)this.age=0;
       clip.start(0,offset+this.age,length-this.age);
       this.source=clip;this.started=true;
-    }else if(this.fallback&&window.speechSynthesis){
+    }else if((coastal?this.coastFallback:this.fallback)&&window.speechSynthesis){
       const u=new SpeechSynthesisUtterance(dialogue[this.current][1]);
       u.lang='fi-FI';u.volume=this.prefs.volume/100;window.speechSynthesis.speak(u);this.utterance=u;
     }
@@ -75,11 +85,14 @@ class CampaignRadio {
     this.queue.push(...ids);
     if(!this.current)this.next();
   }
-  next() {
+  sayAt(id,age){
+    this.clear();this.queue.push(id);this.next(age);
+  }
+  next(age=0) {
     this.stopClip();this.current=this.queue.shift();
     if(!this.current){this.box.hidden=true;return}
     const [who,line]=dialogue[this.current],person=speakers[who];
-    this.started=false;this.age=0;
+    this.started=false;this.age=age;
     this.box.style.setProperty('--voice',person.color);
     this.box.dataset.person=who;this.channel.textContent=person.channel;
     this.name.textContent=person.name;this.words.textContent=line;this.box.hidden=false;
@@ -88,6 +101,6 @@ class CampaignRadio {
   update(dt) {
     if(!this.current||this.paused)return;
     this.age+=dt;
-    if(this.age>radioClips[this.current][1]+.45)this.next();
+    if(this.age>(coastClips[this.current]||radioClips[this.current])[1]+.45)this.next();
   }
 }

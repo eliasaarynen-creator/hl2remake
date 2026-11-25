@@ -1,0 +1,49 @@
+/* Wet timber, cold Baltic light and the remaining warm windows along the quay. */
+#world[data-stage="coast"]{
+  background:linear-gradient(0deg,#657e82 0%,#b7c5bd 48%,#dfcaaa80 57%,#a3b7b721 70%,#667e8950 100%),
+             url(assets/overcast.webp) var(--sky-x,0) var(--sky-y,48%)/auto 115% repeat-x,#9badb2;
+}
+.street-floor.coast-ground{background:linear-gradient(85deg,#92886973,#a89a776b 45%,#7a7e6c88),url(assets/cobbles.webp) center/205px 205px}
+.street-floor.coast-water{background-color:#607d83;background-image:repeating-linear-gradient(2deg,#d1d6c44a 0 1px,transparent 2px 23px,#435e6355 24px 27px,transparent 29px 44px),repeating-linear-gradient(174deg,transparent 0 17px,#b1c4bf4d 18px 19px,transparent 20px 34px),linear-gradient(100deg,#66858a,#728d90 53%,#658187);background-size:415px 99px,233px 117px,100% 100%}
+.track-bed.coast-shingle,.coast-bank{background:linear-gradient(125deg,#6e685c85,#8a877176),url(assets/masonry.webp) center/108px 89px}
+.track-bed.coast-deck,.track-bed.coast-interior,.coast-door,.coast-timber,.coast-skiff-bottom,.coast-hull,.coast-sage,.coast-cinnabar,.coast-ochre{
+  --board:#6e6752;--grain:#bab18a33;--crack:#2a322eaa;
+  background-color:var(--board);
+  background-image:repeating-linear-gradient(0deg,transparent 0 14px,var(--grain) 15px,var(--crack) 16px 17px),
+                   repeating-linear-gradient(3deg,transparent 0 6px,#e2d2a718 7px,transparent 8px 12px),
+                   linear-gradient(109deg,#d7cfab30,#362f2520 45%,#d5c39623);
+}
+.coast-cinnabar{--board:#9d513e;--grain:#edb38b50;--crack:#5e332bb0}
+.coast-sage{--board:#6e847a;--grain:#dae4ba55;--crack:#455a50bd}
+.coast-ochre{--board:#b18853;--grain:#dcc69d50;--crack:#705a41af}
+.coast-hull{--board:#3e726d;--grain:#c5debd55}
+.coast-skiff-bottom,.track-bed.coast-deck,.track-bed.coast-interior{background-image:repeating-linear-gradient(90deg,transparent 0 11px,#312f28b0 12px 13px,#c6b69866 14px,transparent 15px 17px),repeating-linear-gradient(90deg,#aa957054 0 1px,transparent 2px 6px),linear-gradient(120deg,#766c59,#9a8b6f 62%,#6b675c)}
+.track-bed.coast-interior{filter:brightness(.81)}
+.coast-door{--board:#4e6358;background-image:repeating-linear-gradient(90deg,transparent 0 12px,#c4c3a15c 13px,#273b3480 14px 16px),linear-gradient(110deg,#87876a77,transparent 58%)}
+.coast-tar,.coast-boots,.coast-spire,.coast-concrete,.coast-shutter{background:linear-gradient(130deg,#474c49bb,#242d2dc7),url(assets/alloy.webp) center/84px 128px}
+.coast-spire{background:repeating-linear-gradient(90deg,#546971 0 18px,#67808a 20px 25px,#4d626e 26px 39px)}
+.coast-shutter{background:repeating-linear-gradient(0deg,#38484b 0 12px,#68777a 13px 16px,#26363b 17px 21px)}
+.coast-concrete{background:linear-gradient(145deg,#93948ac2,#6c746cc4),url(assets/masonry.webp) center/180px 180px}
+.coast-cream,.coast-bone{background:linear-gradient(110deg,#e8dec2,#c8bb9f 76%,#a69b84)}
+.coast-roof{background:repeating-linear-gradient(90deg,#596a66 0 12px,#6c7971 13px 19px,#425654 20px 25px),#536963}
+.coast-window{border:5px solid #d1c6a9;background:linear-gradient(90deg,transparent 46%,#d3c49f 46% 52%,transparent 52%),linear-gradient(0deg,transparent 46%,#d1c39f 47% 53%,transparent 54%),linear-gradient(150deg,#6b7770,#ddbe82 62%,#857d60)}
+.coast-sign{font-family:var(--mono);font-weight:700;text-align:center;color:#f1e1bb;background:#344c4b;border:2px solid #bab28e;box-shadow:inset 0 0 0 2px #344c4b}
+.coast-lamp{background:linear-gradient(90deg,#90774b,#ffe5a6 20%,#fff0c1 55%,#d3ac71)}
+.coast-relay{background:#a0d6d1}
+.coast-stripe{background:repeating-linear-gradient(-55deg,#cba25e 0 16px,#333f40 17px 32px)}
+.coast-island{background:linear-gradient(#576e6d,#82918a)}
+.coast-forest{background:linear-gradient(#536b67,#4e5e52 62%,#59614c)}
+.coast-net,.coast-creel{background:repeating-linear-gradient(45deg,transparent 0 9px,#463e32 10px 11px),repeating-linear-gradient(-45deg,transparent 0 9px,#8d805e 10px 11px)}
+.coast-creel{background-color:#655e49;background-size:14px 14px;border:4px solid #564f3f}
+.coast-rope,.coast-cork{background:repeating-linear-gradient(25deg,#9b8059 0 3px,#c7a579 4px 6px,#b1946a 7px 9px)}
+.coast-buoy{mask:radial-gradient(transparent 0 36%,#000 38%);background:conic-gradient(#dfcdb1 0 26deg,#ca6b43 27deg 117deg,#dfcdb1 118deg 149deg,#ca6b43 150deg 239deg,#dfcdb1 240deg 271deg,#ca6b43 272deg)}
+.coast-oilskin,.coast-pocket{background:linear-gradient(115deg,#bd9f53,#b69a49 45%,#8d793b);border-bottom:1px solid #736442}
+.coast-pocket{border:1px solid #796837}
+.coast-skin{background:linear-gradient(120deg,#c7ab90,#b99a80 58%,#9d7b65)}
+.coast-hat,.coast-knit,.coast-trousers{background:repeating-linear-gradient(90deg,#404d49 0 2px,#556159 3px 4px)}
+.coast-hat{background:repeating-linear-gradient(90deg,#48554f 0 3px,#68716a 4px 6px)}
+.coast-beard{background:repeating-linear-gradient(104deg,#ccc8b5 0 2px,#a49f91 3px 4px,#e0d7c3 5px)}
+.coast-box{background:linear-gradient(150deg,#45594d,#32443b 65%,#636851)}
+.coast-brass{background:linear-gradient(115deg,#986939,#cfa562 28%,#f1dc93 48%,#b28b4b 55%,#81663c)}
+.coast-chrome{background:linear-gradient(128deg,#5d716e,#b1beb7 28%,#ebe6c9 42%,#84928c 47%,#6c7e7e)}
+.coast-rod{background:linear-gradient(90deg,#273a3b,#708781 40%,#364445 75%)}

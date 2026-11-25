@@ -101,6 +101,7 @@ function architecture(root,map,stage){
 }
 function prop3(root,type){
   if(['kajo','saro','guard','giant','gman','ghost','soul'].includes(type))return actor3(root,type);
+  if(type.startsWith('coast')&&coastProp(root,type))return null;
   if(type==='stationTrain'){stationTrainModel(root);return null}
   if(type==='cell'){
     drum3(root,0,.30,0,.20,.20,.48,'hot-coil');
@@ -157,8 +158,8 @@ class CityScene{
   }
   build(g){
     this.camera.replaceChildren();this.instances.clear();this.map=g.map;this.fixedView='';
-    const stage=g.encounter?'boss':g.yard?'yard':'street';this.viewport.dataset.stage=stage;
-    this.fixed=document.createElement('div');this.moving=document.createElement('div');architecture(this.fixed,g.map,stage);
+    const stage=g.encounter?'boss':g.village?'coast':g.yard?'yard':'street';this.viewport.dataset.stage=stage;
+    this.fixed=document.createElement('div');this.moving=document.createElement('div');if(g.village)coastArchitecture(this.fixed,g.map);else architecture(this.fixed,g.map,stage);
     for(const o of stage==='street'?stationProps:stage==='yard'?yardProps:[]){
       const n=group3(this.fixed);n.style.transform=place3(o.x,o.y,0);prop3(n,o.type);
     }
@@ -172,6 +173,7 @@ class CityScene{
     this.player=svgNode('path',{d:'M.89 0L-.48 -.42l.1 .42-.1 .42z',fill:'#e3ffff'});this.radar.append(this.player);
   }
   items(g){
+    if(g.village)return g.village.items();
     if(g.encounter)return [...g.encounter.sprites(),...g.encounter.traps.map(t=>({...t,type:'trap',size:t.radius}))];
     if(g.yard){
       const y=g.yard;
@@ -231,11 +233,11 @@ class CityScene{
       }
     }
     for(const [key,obj] of this.instances)if(!present.has(key)){obj.batch.dispose();obj.root.remove();this.instances.delete(key)}
-    const weapon=g.yard?.armed?'pulse':'gravity';
+    const weapon=g.village?(g.village.ready?'rod':'empty'):g.yard?.armed?'pulse':'gravity';
     if(this.weapon!==weapon){
       this.rig.replaceChildren();this.weapon=weapon;
       const model=document.createElement('div');
-      if(weapon==='pulse')pulseModel(model,true);else gravityModel(model);
+      if(weapon==='pulse')pulseModel(model,true);else if(weapon==='rod')coastRodModel(model);else if(weapon==='gravity')gravityModel(model);
       this.gunBatch=new SurfaceBatch(model,this.rig);
       const payload=document.createElement('div'),orb=document.createElement('div');
       prop3(payload,'cell');prop3(orb,'orb');
@@ -256,7 +258,7 @@ class CityScene{
       this.lastGun=gunKey;
     }
     this.player.setAttribute('transform','translate('+g.x+' '+g.y+') rotate('+g.angle*180/Math.PI+')');
-    const goal=g.encounter?.target||(g.yard?(g.yard.armed?yardGate:rebels[0]):g.held>=0?g.station:g.cells.find(c=>!c.inPlace)||g.trainDoor);
+    const goal=g.encounter?.target||(g.village?coastSpots[g.village.target]:g.yard?(g.yard.armed?yardGate:rebels[0]):g.held>=0?g.station:g.cells.find(c=>!c.inPlace)||g.trainDoor);
     this.waypoint.setAttribute('cx',goal.x);this.waypoint.setAttribute('cy',goal.y);
     this.blips.setAttribute('d',(g.yard?.enemies||[]).map(e=>'M'+(e.x-.22)+' '+(e.y-.22)+'h.44v.44h-.44z').join(''));
   }

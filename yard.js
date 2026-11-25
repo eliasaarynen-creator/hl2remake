@@ -91,12 +91,12 @@ class RailYard {
   get contact(){return this.enemies.reduce((best,e)=>!best||this.game.distance(e)<this.game.distance(best)?e:best,null)}
   get objective(){
     if(!this.armed)return 'Ota pulssikivääri Karolta ja Säröltä.';
-    if(this.clear)return 'Vaihde auki · Mene terminaalin ovelle.';
+    if(this.clear)return 'Mene ratapihan tulvaportille ja avaa se.';
     if(!this.enemies.length)return 'Vaihteen puolustus · Aalto '+(this.wave+1)+'/3 lähestyy';
     const giants=this.enemies.filter(e=>e.kind==='giant').length;
     return 'Aalto '+(this.wave+1)+'/3 · Sotilaita '+(this.enemies.length-giants)+' · Jättejä '+giants;
   }
-  get hint(){return !this.armed&&this.nearFriends?'Ota pulssikivääri':this.clear&&this.nearGate?'Avaa terminaalin ovi':''}
+  get hint(){return !this.armed&&this.nearFriends?'Ota pulssikivääri':this.clear&&this.nearGate?'Avaa tulvaportti':''}
   checkpoint(){return {stage:'yard',armed:this.armed,wave:this.wave,nextBoss:this.nextBoss,elapsed:this.game.elapsed}}
   use(fire=false){
     if(this.over)return;
@@ -105,7 +105,7 @@ class RailYard {
       this.armed=true;this.delay=5.5;g.ui.radio.say('weapon');g.ui.tone(390);
       g.tell('Pulssikivääri saatu · Pidä Hiiri 1 tai F pohjassa');g.updateUI();g.ui.save();return;
     }
-    if(this.clear&&this.nearGate){g.openTerminal(this.nextBoss);return}
+    if(this.clear){if(!fire&&this.nearGate)g.openVillage({film:'swallow',nextBoss:this.nextBoss});return}
     if(this.armed&&fire)this.fire();
   }
   sight(a,b,fromZ=.83,toZ=.83){

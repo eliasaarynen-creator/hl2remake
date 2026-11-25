@@ -6,6 +6,7 @@
 <meta name="description" content="Pelaa Aikakatkos-fanikampanjaa. Näe G-Manin, Karon ja Särön kohtaaminen metrovaunun ikkunasta ja jatka asema-aukiolle City 17:ssä.">
 <link rel="icon" href="assets/lambda.svg" type="image/svg+xml"><link rel="stylesheet" href="style.css?v=1a8ca537a3">
 <link rel="stylesheet" href="metro.css?v=ae695e5ba7">
+<link rel="stylesheet" href="coast-materials.css?v=57d1cca4a5"><link rel="stylesheet" href="coast.css?v=b35fc7464e">
 <link rel="preload" as="image" href="assets/city17.webp">
 </head>
 <body>
@@ -31,6 +32,7 @@
 <h2>Aikakatkos</h2>
 <nav aria-label="Pelivalikko">
 <button class="navitem" id="playBtn"><span id="playText">Aloita kampanja</span></button>
+<button class="navitem" id="villageBtn" hidden>Pelaa luku 3 · Kalastajakylä</button>
 <button class="navitem" id="metroReplayBtn" hidden>Katso luku 0 · Metromatka</button>
 <button class="navitem" id="practiceBtn">Harjoittele G-Mania</button>
 <button class="navitem" id="controlsBtn">Ohjaimet</button>
@@ -69,6 +71,9 @@
   </div>
   <div id="metroTitle"><small>LUKU 0</small><strong>Viimeinen vuoro</strong></div>
 </div></div>
+<div id="coastFilm" hidden aria-hidden="true"><div class="coast-shot"></div><div class="coast-intertitle"><small>LUKU III · SUOLASALMI</small><strong></strong></div></div>
+<div id="coastFloat" hidden aria-hidden="true"><div class="float-ripples"><i></i></div><span></span></div>
+<aside id="shoreCatch" hidden aria-live="polite"><div class="catch-drawing"><img alt=""></div><div><small>SAALIS · SUOLASALMI</small><strong></strong><i></i><p></p></div></aside>
 <div id="viewmodel" aria-hidden="true"><div id="weaponRig"></div></div>
 <svg id="radar" viewBox="0 0 32 20" aria-label="Kampanjan pienoiskartta"></svg>
 <div class="game-header"><div class="objective"><b id="sectionName">ASEMA-AUKIO</b><span id="mission"></span></div><div class="game-tools"><button id="skipMetro" hidden>Ohita metromatka</button><button id="padToggle" aria-pressed="false" aria-controls="pad">Ruutuohjain</button><button id="pauseBtn" class="iconButton" aria-label="Tauko"><svg class="icon"><use href="#pause"/></svg></button></div></div>
@@ -82,15 +87,18 @@
 <dialog id="panel" aria-labelledby="panelTitle"><div class="dialog-top"><span class="dialog-brand"><svg><use href="#lambda"/></svg> AIKAKATKOS</span><button id="closePanel" aria-label="Sulje"><svg class="icon"><use href="#close"/></svg></button></div><div id="panelContent"></div></dialog>
 <div id="toast" role="status"></div>
 <script src="radio-clips.js?v=6ebae0acdf" defer></script>
-<script src="story.js?v=2b27bff8d3" defer></script>
-<script src="yard.js?v=1eee2d0087" defer></script>
+<script src="story.js?v=a11df290fa" defer></script>
+<script src="yard.js?v=cb730bc254" defer></script>
 <script src="encounter.js?v=c5467e9455" defer></script>
 <script src="geometry.js?v=a5c38f99fc" defer></script>
 <script src="models.js?v=cd03b25126" defer></script>
 <script src="projection.js?v=910d3d73aa" defer></script>
-<script src="scene.js?v=b8815f4887" defer></script>
+<script src="coast-models.js?v=32a1437613" defer></script>
+<script src="coast-audio.js?v=699ab9840c" defer></script>
+<script src="coast.js?v=bbc66f9a1c" defer></script>
+<script src="scene.js?v=f65da4d747" defer></script>
 <script src="metro.js?v=c509bb4d55" defer></script>
 <script src="rail-transfer.js?v=5d5ddc52d1" defer></script>
-<script src="game.js?v=382529de21" defer></script>
-<script src="app.js?v=2740cb0ad7" defer></script>
+<script src="game.js?v=bb29726f3d" defer></script>
+<script src="app.js?v=5bbaadb923" defer></script>
 </body></html>

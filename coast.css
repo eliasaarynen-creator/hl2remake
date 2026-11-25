@@ -1,0 +1,34 @@
+#arena:not(.fishing-village) :is(#shoreCatch,#coastFilm,#coastFloat){display:none}
+#arena #coastFilm{position:absolute;inset:0;overflow:hidden;background:#061315;pointer-events:none;z-index:1}
+.coast-shot{position:absolute;inset:0;background-position:center;background-size:cover;transition:filter 1s ease,opacity 1s ease;will-change:transform}
+#coastFilm[data-film=swallow] .coast-shot{background-image:url(assets/swallow.svg);transform:scale(calc(1 + var(--shot-progress)*.38));transform-origin:54% 48%}
+#coastFilm[data-film=swallow][data-shot="1"] .coast-shot{transform:scale(calc(1.7 + var(--shot-progress)*1.6));filter:brightness(.3) saturate(.7);transition:transform 1.25s ease-in,filter 1.5s ease}
+#coastFilm[data-film=swallow][data-shot="2"] .coast-shot{background-image:url(assets/suolasalmi.webp);transform:scale(calc(1.12 - var(--shot-progress)*.1));filter:none}
+#coastFilm[data-film=assembly] .coast-shot{background-image:url(assets/assembly.svg);transform:scale(calc(1.13 - var(--shot-progress)*.13));transform-origin:67% 55%}
+#coastFilm[data-film=assembly][data-shot="1"] .coast-shot{filter:saturate(.58);transform:scale(1.13);transform-origin:40% 35%}
+#coastFilm:after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,#041214e6 0,transparent 31%,transparent 72%,#091413ab 100%);box-shadow:inset 0 0 11vw #0b211c55}
+.coast-intertitle{position:absolute;z-index:1;left:5vw;bottom:17%;display:grid;color:#fff3d6;text-shadow:0 2px 12px #152119}
+.coast-intertitle small,#shoreCatch small{font:700 .8rem/1.6 var(--mono);letter-spacing:.15em;color:#efc380}
+.coast-intertitle strong{font:500 clamp(1.8rem,4.1vw,4.5rem)/1.05 Georgia,serif;letter-spacing:-.025em}
+#arena.coast-film :is(#viewmodel,#bearing,#crosshair,#radar,.touch-set,.hud,#interaction,#notice,#phaseSplash,#hazardWarning,#padToggle){display:none}
+#arena.coast-film #radio{top:auto;bottom:3.3%;max-width:min(85vw,800px);width:max-content;padding:.5rem 1rem;background:#071414cd}
+#arena.coast-film #radio p{font-size:clamp(.94rem,1.5vw,1.13rem)}
+#arena.fishing-village #radio[data-person=elder] {--voice:#efd39b}
+#arena #shoreCatch{position:absolute;pointer-events:none;right:3vw;bottom:11vh;width:min(23rem,88vw);padding:1rem 1.1rem;color:#f3eddb;background:linear-gradient(135deg,#112a2bef,#263a36f1);border:1px solid #a0a7948a;box-shadow:0 .45rem 1.5rem #121b1b55;border-radius:2px}
+#shoreCatch .catch-drawing{height:clamp(3.2rem,10vh,6.8rem);border-bottom:1px solid #566b63;margin-bottom:.5rem;background:repeating-linear-gradient(90deg,transparent 0 18px,#93aaa016 18px 19px) left bottom/100% .4rem no-repeat}
+.catch-drawing img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 .17rem .12rem #0f1d1dc9)}
+#shoreCatch strong,#shoreCatch i{display:block}
+#shoreCatch strong{font:normal 1.65rem/1.15 Georgia,serif}
+#shoreCatch i{font:italic .86rem Georgia,serif;color:#c0caba}
+#shoreCatch p{font:normal .96rem/1.3 var(--sans);margin:.4rem 0 0;color:#e3e2d5}
+#shoreCatch[data-fish=key]{border-color:#d9b571}
+#arena #coastFloat{position:absolute;pointer-events:none;top:54%;left:50%;width:2px;height:2px}
+#coastFloat>span{display:block;position:absolute;bottom:0;left:-3px;width:6px;height:19px;border-radius:50% 50% 40% 40%;background:linear-gradient(#f05833 0% 40%,#f1e8bc 41% 72%,#313d3c 73%);box-shadow:0 0 1px #162c29;animation:harbor-bob 1.7s ease-in-out infinite}
+.float-ripples{position:absolute;left:-21px;top:-4px;width:42px;height:10px;border:1.5px solid #d2e8dc;opacity:.75;border-radius:50%;animation:harbor-ring 1.7s ease-out infinite}
+#coastFloat.bite>span{animation:harbor-dip .55s ease-in-out infinite}
+#coastFloat.bite .float-ripples{animation-duration:.7s}
+@keyframes harbor-bob{50%{transform:translateY(3px) rotate(8deg)}}
+@keyframes harbor-dip{65%{transform:translateY(10px) rotate(19deg)}}
+@keyframes harbor-ring{from{transform:scale(.35);opacity:.9}to{transform:scale(1.3);opacity:.10}}
+@media(max-width:700px){.coast-intertitle{bottom:24%;left:5%}#arena #shoreCatch{bottom:auto;top:20%;right:3%;width:min(18rem,64vw);padding:.55rem .7rem}#shoreCatch .catch-drawing{height:2.7rem}#shoreCatch p{font-size:.86rem}}
+@media(prefers-reduced-motion:reduce){#arena #coastFilm .coast-shot{transition:none;transform:none}.float-ripples,#coastFloat>span{animation:none}#coastFloat.bite>span{transform:translateY(10px)}}
